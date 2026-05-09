@@ -48,7 +48,9 @@ const defaultSocketUrl = () => {
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || defaultSocketUrl();
 const SESSION_USER_KEY = 'gdhub.currentUserId';
+const SESSION_EMAIL_KEY = 'gdhub.currentUserEmail';
 const NEW_ENTRY_ID = '__new-entry__';
+const DEFAULT_LOGIN_EMAIL = 'dinhloan.al@gmail.com';
 
 const displayName = (user?: User | string) => {
   if (!user || typeof user === 'string') {
@@ -97,13 +99,38 @@ export default function App() {
   const users = Array.isArray(usersQuery.data) ? usersQuery.data : [];
   const currentUser = users.find((user) => user._id === currentUserId);
 
+  useEffect(() => {
+    if (usersQuery.isLoading || !users.length) {
+      return;
+    }
+
+    if (currentUserId && currentUser) {
+      return;
+    }
+
+    const storedEmail = localStorage.getItem(SESSION_EMAIL_KEY)?.trim().toLowerCase();
+    const recoveredUser = storedEmail ? users.find((user) => user.email?.trim().toLowerCase() === storedEmail) : undefined;
+    if (recoveredUser) {
+      localStorage.setItem(SESSION_USER_KEY, recoveredUser._id);
+      setCurrentUserId(recoveredUser._id);
+      return;
+    }
+
+    if (currentUserId) {
+      localStorage.removeItem(SESSION_USER_KEY);
+      setCurrentUserId('');
+    }
+  }, [currentUser, currentUserId, users, usersQuery.isLoading]);
+
   const handleLogin = (user: User) => {
     localStorage.setItem(SESSION_USER_KEY, user._id);
+    localStorage.setItem(SESSION_EMAIL_KEY, user.email);
     setCurrentUserId(user._id);
   };
 
   const handleLogout = () => {
     localStorage.removeItem(SESSION_USER_KEY);
+    localStorage.removeItem(SESSION_EMAIL_KEY);
     setCurrentUserId('');
   };
 
@@ -113,6 +140,7 @@ export default function App() {
         users={users}
         isLoading={usersQuery.isLoading}
         error={usersQuery.isError ? 'Không kết nối được backend. Vui lòng kiểm tra API public.' : undefined}
+        preferredEmail={DEFAULT_LOGIN_EMAIL}
         onLogin={handleLogin}
       />
     );

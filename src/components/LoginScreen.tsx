@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BrainCircuit, LogIn, Mail, UserRound } from 'lucide-react';
 import { User } from '../types';
 
@@ -6,24 +6,49 @@ type LoginScreenProps = {
   users: User[];
   isLoading?: boolean;
   error?: string;
+  preferredEmail?: string;
   onLogin: (user: User) => void;
 };
 
 const displayName = (user: User) => user.displayName || user.name || user.username || user.email;
+const normalizeEmail = (value?: string) => value?.trim().toLowerCase() ?? '';
 
-export function LoginScreen({ users, isLoading, error: loadError, onLogin }: LoginScreenProps) {
+export function LoginScreen({ users, isLoading, error: loadError, preferredEmail = 'dinhloan.al@gmail.com', onLogin }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [error, setError] = useState('');
 
   const selectedUser = useMemo(() => users.find((user) => user._id === selectedUserId), [selectedUserId, users]);
-  const visibleUsers = users.slice(0, 6);
+  const preferredNormalizedEmail = normalizeEmail(preferredEmail);
+  const visibleUsers = useMemo(
+    () =>
+      [...users]
+        .sort((left, right) => {
+          const leftPreferred = normalizeEmail(left.email) === preferredNormalizedEmail ? 1 : 0;
+          const rightPreferred = normalizeEmail(right.email) === preferredNormalizedEmail ? 1 : 0;
+          return rightPreferred - leftPreferred;
+        })
+        .slice(0, 6),
+    [preferredNormalizedEmail, users],
+  );
   const activeError = error || loadError;
+
+  useEffect(() => {
+    if (email || selectedUserId || !users.length) {
+      return;
+    }
+
+    const preferredUser = users.find((user) => normalizeEmail(user.email) === preferredNormalizedEmail);
+    if (preferredUser) {
+      setEmail(preferredUser.email);
+      setSelectedUserId(preferredUser._id);
+    }
+  }, [email, preferredNormalizedEmail, selectedUserId, users]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
-    const matchedUser = selectedUser ?? users.find((user) => user.email.toLowerCase() === normalizedEmail);
+    const normalizedEmail = normalizeEmail(email);
+    const matchedUser = selectedUser ?? users.find((user) => normalizeEmail(user.email) === normalizedEmail);
 
     if (!matchedUser) {
       setError('User chưa tồn tại trong database. Vui lòng chọn đúng thành viên đã được tạo trên backend.');
