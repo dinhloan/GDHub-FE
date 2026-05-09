@@ -10,6 +10,7 @@ import {
   FileText,
   GitBranch,
   Home,
+  ImagePlus,
   LogOut,
   MessageCircle,
   Network,
@@ -19,6 +20,7 @@ import {
   Send,
   Sparkles,
   Tags,
+  Trash2,
   Upload,
   Users,
 } from 'lucide-react';
@@ -27,10 +29,14 @@ import 'reactflow/dist/style.css';
 import { io } from 'socket.io-client';
 import { api } from './api/client';
 import { LoginScreen } from './components/LoginScreen';
+import { VoiceNoteButton } from './components/VoiceNoteButton';
 import { buildFallbackGraph, normalizeGraph } from './lib/graph';
 import { Checklist, ChecklistStatus, Entry, Group, Message, Topic, User } from './types';
 
-type ViewKey = 'home' | 'detail' | 'compose' | 'graph' | 'workflow';
+type ViewKey = 'home' | 'detail' | 'compose' | 'graph' | 'workflow' | 'search' | 'workspace';
+type CritiqueTemplate = '5W1H' | '6 Thinking Hats';
+type ChecklistTemplate = 'Apple DRI' | 'Google Design Sprint';
+type EntryMedia = { type: string; url: string };
 type NewTopicPayload = {
   groupId: string;
   leaderId: string;
@@ -92,6 +98,10 @@ const demoTopicPriority = (topic: Topic) => {
 
   return priority;
 };
+
+const isTopicOverdue = (topic: Topic) => topic.status === 'Overdue' || (topic.deadline ? new Date(topic.deadline).getTime() < Date.now() : false);
+
+const shortText = (value: string, limit = 140) => (value.length > limit ? `${value.slice(0, limit).trim()}...` : value);
 
 export default function App() {
   const [currentUserId, setCurrentUserId] = useState(() => localStorage.getItem(SESSION_USER_KEY) ?? '');
@@ -158,8 +168,10 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
   const [draftContent, setDraftContent] = useState('');
   const [draftTags, setDraftTags] = useState('ai-critic, workflow');
   const [draftStatus, setDraftStatus] = useState<'Draft' | 'Debating' | 'Final'>('Debating');
+  const [draftMedia, setDraftMedia] = useState<EntryMedia[]>([]);
   const [messageContent, setMessageContent] = useState('');
   const [critique, setCritique] = useState<string[]>([]);
+  const [critiqueTemplate, setCritiqueTemplate] = useState<CritiqueTemplate>('5W1H');
   const [mutationError, setMutationError] = useState('');
 
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: api.groups });
@@ -199,6 +211,11 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
       return `${entry.content} ${tags}`.toLowerCase().includes(query);
     });
   }, [entries, searchQuery]);
+  const semanticSearchQuery = useQuery({
+    queryKey: ['entries-search', activeTopic?._id, searchQuery.trim()],
+    queryFn: () => api.searchEntries(searchQuery.trim(), activeTopic?._id),
+    enabled: Boolean(activeTopic?._id && searchQuery.trim().length >= 2),
+  });
   const selectedEntry = activeEntryId === NEW_ENTRY_ID ? undefined : visibleEntries.find((entry) => entry._id === activeEntryId);
   const activeEntry = selectedEntry ?? (activeEntryId ? undefined : visibleEntries[0]);
 
@@ -212,6 +229,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
     setDraftContent(activeEntry?.content ?? '');
     setDraftTags(activeEntry?.tags?.map((tag) => tag.name).join(', ') || 'ai-critic, workflow');
     setDraftStatus(activeEntry?.status ?? 'Debating');
+    setDraftMedia(activeEntry?.media ?? []);
     setCritique([]);
     setMutationError('');
   }, [activeEntry?._id]);
@@ -259,7 +277,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
     queryFn: () => api.checklists(activeTopic?._id ?? ''),
     enabled: Boolean(activeTopic?._id),
   });
-  const checklist = checklistsQuery.data?.[0];
+  const checklists = checklistsQuery.data ?? [];
 
   const messagesQuery = useQuery({
     queryKey: ['messages', activeEntry?._id],
@@ -284,7 +302,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
           .map((tag) => tag.trim())
           .filter(Boolean)
           .map((name) => ({ name, isPrivate: name.startsWith('_') })),
-        media: [],
+        media: draftMedia,
       };
 
       return activeEntry ? api.updateEntry(activeEntry._id, payload) : api.createEntry(payload);
@@ -327,8 +345,8 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
   });
 
   const checklistMutation = useMutation({
-    mutationFn: (item: Checklist['items'][number]) =>
-      api.updateChecklistItem(checklist?._id ?? '', item._id, {
+    mutationFn: ({ checklistId, item }: { checklistId: string; item: Checklist['items'][number] }) =>
+      api.updateChecklistItem(checklistId, item._id, {
         status: itemNextStatus[item.status],
       }),
     onSuccess: (updatedChecklist) => {
@@ -342,12 +360,21 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
   });
 
   const critiqueMutation = useMutation({
-    mutationFn: () => api.critique({ content: activeEntry?.content || draftContent, template: '5W1H' }),
+    mutationFn: () => api.critique({ content: activeEntry?.content || draftContent, template: critiqueTemplate }),
     onSuccess: (data) => {
       setMutationError('');
       setCritique(data.questions);
     },
     onError: (error) => setMutationError(error instanceof Error ? error.message : 'AI Critic chưa phản hồi được.'),
+  });
+
+  const imageUploadMutation = useMutation({
+    mutationFn: (file: File) => api.uploadEntryImage(file),
+    onSuccess: (media) => {
+      setMutationError('');
+      setDraftMedia((current) => [...current, media]);
+    },
+    onError: (error) => setMutationError(error instanceof Error ? error.message : 'Không upload được hình ảnh.'),
   });
 
   const transcribeMutation = useMutation({
@@ -360,11 +387,11 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
   });
 
   const createChecklistMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (template: ChecklistTemplate) => {
       if (!activeTopic?._id) {
         throw new Error('Chưa chọn topic để tạo checklist.');
       }
-      return api.createChecklistTemplate('Google Design Sprint', {
+      return api.createChecklistTemplate(template, {
         topicId: activeTopic._id,
         driUserId: currentUser._id,
       });
@@ -386,6 +413,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
       setDraftContent('');
       setDraftTags('ai-critic, workflow');
       setDraftStatus('Draft');
+      setDraftMedia([]);
       setActiveView('compose');
       queryClient.setQueryData<Topic[]>(['topics'], (current) => [topic, ...(current ?? [])]);
       queryClient.invalidateQueries({ queryKey: ['topics'] });
@@ -404,6 +432,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
     setDraftContent('');
     setDraftTags('ai-critic, workflow');
     setDraftStatus('Draft');
+    setDraftMedia([]);
     setMutationError('');
     setActiveView('compose');
   };
@@ -443,10 +472,15 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
               entries={visibleEntries}
               activeTopic={activeTopic}
               writableGroup={writableGroup}
+              groups={groups}
+              users={users}
+              checklists={checklists}
               isCreatingTopic={createTopicMutation.isPending}
               onTopicSelect={goTopic}
               onCreateTopic={(payload) => createTopicMutation.mutate(payload)}
               onNewEntry={startNewEntry}
+              onSearch={() => setActiveView('search')}
+              onWorkspace={() => setActiveView('workspace')}
             />
           )}
           {activeView === 'detail' && (
@@ -454,11 +488,15 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
               activeTopic={activeTopic}
               activeEntry={activeEntry}
               entries={visibleEntries}
+              activeEntryId={activeEntry?._id}
               messages={messages}
               messageContent={messageContent}
+              critiqueTemplate={critiqueTemplate}
+              setCritiqueTemplate={setCritiqueTemplate}
               setMessageContent={setMessageContent}
               onBack={() => setActiveView('home')}
               onCompose={() => setActiveView('compose')}
+              onSelectEntry={setActiveEntryId}
               onGraph={() => setActiveView('graph')}
               onSendMessage={() => messageMutation.mutate()}
               isSending={messageMutation.isPending}
@@ -473,25 +511,55 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
               draftContent={draftContent}
               draftTags={draftTags}
               draftStatus={draftStatus}
+              draftMedia={draftMedia}
               setDraftContent={setDraftContent}
               setDraftTags={setDraftTags}
               setDraftStatus={setDraftStatus}
+              setDraftMedia={setDraftMedia}
               onBack={() => setActiveView('detail')}
+              onTranscript={(text) => setDraftContent((current) => (current.trim() ? `${current.trim()}\n\n${text}` : text))}
               onAudioSelected={(file) => transcribeMutation.mutate(file)}
+              onImageSelected={(file) => imageUploadMutation.mutate(file)}
               onSave={() => saveEntryMutation.mutate()}
               isTranscribing={transcribeMutation.isPending}
+              isUploadingImage={imageUploadMutation.isPending}
               isSaving={saveEntryMutation.isPending}
             />
           )}
           {activeView === 'graph' && <GraphView graph={graph} entries={visibleEntries} onBack={() => setActiveView('detail')} />}
           {activeView === 'workflow' && (
             <WorkflowView
-              checklist={checklist}
-              onCreateChecklist={() => createChecklistMutation.mutate()}
-              onToggleItem={(item) => checklistMutation.mutate(item)}
+              checklists={checklists}
+              users={users}
+              onCreateChecklist={(template) => createChecklistMutation.mutate(template)}
+              onToggleItem={(checklistId, item) => checklistMutation.mutate({ checklistId, item })}
               isCreating={createChecklistMutation.isPending}
               isUpdating={checklistMutation.isPending}
               onBack={() => setActiveView('detail')}
+            />
+          )}
+          {activeView === 'search' && (
+            <SearchView
+              query={searchQuery}
+              setQuery={setSearchQuery}
+              results={semanticSearchQuery.data ?? visibleEntries}
+              isLoading={semanticSearchQuery.isFetching}
+              onBack={() => setActiveView('home')}
+              onSelectEntry={(entry) => {
+                setActiveTopicId(refId(entry.topicId));
+                setActiveEntryId(entry._id);
+                setActiveView('detail');
+              }}
+            />
+          )}
+          {activeView === 'workspace' && (
+            <WorkspaceView
+              currentUser={currentUser}
+              users={users}
+              groups={groups}
+              topics={topics}
+              onBack={() => setActiveView('home')}
+              onTopicSelect={goTopic}
             />
           )}
         </div>
@@ -508,20 +576,30 @@ function DashboardView({
   entries,
   activeTopic,
   writableGroup,
+  groups,
+  users,
+  checklists,
   isCreatingTopic,
   onTopicSelect,
   onCreateTopic,
   onNewEntry,
+  onSearch,
+  onWorkspace,
 }: {
   currentUser: User;
   topics: Topic[];
   entries: Entry[];
   activeTopic?: Topic;
   writableGroup?: Group;
+  groups: Group[];
+  users: User[];
+  checklists: Checklist[];
   isCreatingTopic: boolean;
   onTopicSelect: (topic: Topic) => void;
   onCreateTopic: (payload: NewTopicPayload) => void;
   onNewEntry: () => void;
+  onSearch: () => void;
+  onWorkspace: () => void;
 }) {
   const [isTopicFormOpen, setIsTopicFormOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -529,6 +607,8 @@ function DashboardView({
   const [category, setCategory] = useState('Tech');
   const [deadline, setDeadline] = useState(() => new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10));
   const canCreateTopic = Boolean(writableGroup?._id && refId(writableGroup?.leaderId) === currentUser._id);
+  const overdueCount = topics.filter(isTopicOverdue).length;
+  const doneItems = checklists.flatMap((checklist) => checklist.items).filter((item) => item.status === 'Done').length;
 
   const submitTopic = (event: FormEvent) => {
     event.preventDefault();
@@ -574,8 +654,31 @@ function DashboardView({
         )}
       </section>
 
+      <section className="grid grid-cols-2 gap-3">
+        <button className="rounded-stitch border border-outline bg-surface-tonal p-3 text-left" onClick={onSearch} type="button">
+          <Search className="mb-3 text-accent" size={18} />
+          <p className="text-sm font-semibold">Semantic Search</p>
+          <p className="mt-1 text-xs leading-5 text-primary/55">Tìm entry theo nội dung, tag và điểm tương đồng.</p>
+        </button>
+        <button className="rounded-stitch border border-outline bg-surface-tonal p-3 text-left" onClick={onWorkspace} type="button">
+          <Users className="mb-3 text-accent" size={18} />
+          <p className="text-sm font-semibold">Group & Timeline</p>
+          <p className="mt-1 text-xs leading-5 text-primary/55">{groups.length} nhóm, {users.length} thành viên, {overdueCount} quá hạn.</p>
+        </button>
+        <button className="rounded-stitch border border-outline bg-surface-tonal p-3 text-left" onClick={onNewEntry} type="button">
+          <Upload className="mb-3 text-accent" size={18} />
+          <p className="text-sm font-semibold">Multimedia Note</p>
+          <p className="mt-1 text-xs leading-5 text-primary/55">Ghi âm, upload audio, ảnh và lưu vào DB.</p>
+        </button>
+        <button className="rounded-stitch border border-outline bg-surface-tonal p-3 text-left" onClick={() => activeTopic && onTopicSelect(activeTopic)} type="button">
+          <CheckSquare className="mb-3 text-accent" size={18} />
+          <p className="text-sm font-semibold">AI & Workflow</p>
+          <p className="mt-1 text-xs leading-5 text-primary/55">{doneItems} việc đã Done trong checklist hiện tại.</p>
+        </button>
+      </section>
+
       <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Chủ đề đang hoạt động</h2>
             <p className="mt-1 text-xs text-primary/45">{topics.length} chủ đề</p>
@@ -646,12 +749,16 @@ function DashboardView({
 function DetailView({
   activeTopic,
   activeEntry,
+  activeEntryId,
   entries,
   messages,
   messageContent,
+  critiqueTemplate,
+  setCritiqueTemplate,
   setMessageContent,
   onBack,
   onCompose,
+  onSelectEntry,
   onGraph,
   onSendMessage,
   isSending,
@@ -661,12 +768,16 @@ function DetailView({
 }: {
   activeTopic?: Topic;
   activeEntry?: Entry;
+  activeEntryId?: string;
   entries: Entry[];
   messages: Message[];
   messageContent: string;
+  critiqueTemplate: CritiqueTemplate;
+  setCritiqueTemplate: (value: CritiqueTemplate) => void;
   setMessageContent: (value: string) => void;
   onBack: () => void;
   onCompose: () => void;
+  onSelectEntry: (entryId: string) => void;
   onGraph: () => void;
   onSendMessage: () => void;
   isSending: boolean;
@@ -705,6 +816,15 @@ function DetailView({
               <span className="font-semibold">{activeEntry.status}</span>
             </div>
             <p className="text-sm leading-6 text-primary/80">{activeEntry.content}</p>
+            {activeEntry.media?.length ? (
+              <div className="mt-3 grid gap-2">
+                {activeEntry.media.map((media) => (
+                  <a className="rounded-stitch border border-outline bg-surface px-3 py-2 text-xs text-primary/70" href={media.url} key={media.url} target="_blank" rel="noreferrer">
+                    {media.type}: {media.url}
+                  </a>
+                ))}
+              </div>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               {activeEntry.tags?.map((tag) => (
                 <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/65" key={tag.name}>
@@ -716,6 +836,24 @@ function DetailView({
         ) : (
           <p className="rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Chưa có entry.</p>
         )}
+        <div className="mt-3 grid gap-2">
+          {entries.map((entry) => (
+            <button
+              className={`rounded-stitch border p-3 text-left text-sm ${
+                entry._id === activeEntryId ? 'border-accent bg-accent/10 text-primary' : 'border-outline bg-surface text-primary/65'
+              }`}
+              key={entry._id}
+              onClick={() => onSelectEntry(entry._id)}
+              type="button"
+            >
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <span className="font-semibold">{entry.status}</span>
+                <span className="text-xs text-primary/45">{entry.tags?.map((tag) => tag.name).slice(0, 2).join(', ')}</span>
+              </div>
+              <p className="line-clamp-2 leading-6">{shortText(entry.content, 120)}</p>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
@@ -724,6 +862,14 @@ function DetailView({
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Tác động</h2>
             <p className="text-xs text-primary/45">AI phản biện và thảo luận</p>
           </div>
+          <select
+            className="h-9 rounded-stitch border border-outline bg-surface px-2 text-xs text-primary outline-none focus:border-accent"
+            value={critiqueTemplate}
+            onChange={(event) => setCritiqueTemplate(event.target.value as CritiqueTemplate)}
+          >
+            <option>5W1H</option>
+            <option>6 Thinking Hats</option>
+          </select>
           <button className="inline-flex h-9 items-center gap-2 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-45" disabled={!activeEntry || isCritiquing} onClick={onCritique} type="button">
             <Bot size={16} />
             AI
@@ -779,26 +925,138 @@ function ComposeView({
   draftContent,
   draftTags,
   draftStatus,
+  draftMedia,
   setDraftContent,
   setDraftTags,
   setDraftStatus,
+  setDraftMedia,
   onBack,
+  onTranscript,
   onAudioSelected,
+  onImageSelected,
   onSave,
   isTranscribing,
+  isUploadingImage,
   isSaving,
 }: {
   topic?: Topic;
   draftContent: string;
   draftTags: string;
   draftStatus: 'Draft' | 'Debating' | 'Final';
+  draftMedia: EntryMedia[];
   setDraftContent: (value: string) => void;
   setDraftTags: (value: string) => void;
   setDraftStatus: (value: 'Draft' | 'Debating' | 'Final') => void;
+  setDraftMedia: (value: EntryMedia[]) => void;
   onBack: () => void;
+  onTranscript: (text: string) => void;
   onAudioSelected: (file: File) => void;
+  onImageSelected: (file: File) => void;
   onSave: () => void;
   isTranscribing: boolean;
+  isUploadingImage: boolean;
+  isSaving: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      <ViewTitle icon={<ArrowLeft size={18} />} title="Soạn thảo" onClick={onBack} />
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Topic</p>
+        <h2 className="mt-2 text-xl font-semibold">{topic?.title}</h2>
+      </section>
+      <textarea className="min-h-72 w-full resize-none rounded-stitch border border-outline bg-surface-tonal p-4 text-base leading-7 text-primary outline-none placeholder:text-primary/35 focus:border-accent" value={draftContent} onChange={(event) => setDraftContent(event.target.value)} placeholder="Ghi lại luận điểm, phản biện hoặc transcript..." />
+      <label className="relative block">
+        <Tags className="absolute left-3 top-3 text-primary/40" size={16} />
+        <input className="h-11 w-full rounded-stitch border border-outline bg-surface-tonal pl-9 pr-3 text-sm text-primary outline-none focus:border-accent" value={draftTags} onChange={(event) => setDraftTags(event.target.value)} placeholder="tags" />
+      </label>
+      <select className="h-11 w-full rounded-stitch border border-outline bg-surface-tonal px-3 text-sm text-primary outline-none focus:border-accent" value={draftStatus} onChange={(event) => setDraftStatus(event.target.value as 'Draft' | 'Debating' | 'Final')}>
+        <option>Draft</option>
+        <option>Debating</option>
+        <option>Final</option>
+      </select>
+      <div className="grid grid-cols-3 gap-2">
+        <VoiceNoteButton onTranscript={onTranscript} />
+        <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-stitch border border-outline bg-surface-tonal text-sm font-semibold text-primary/75">
+          <Upload size={17} />
+          <span>{isTranscribing ? 'Audio...' : 'Audio'}</span>
+          <input accept="audio/*" className="hidden" disabled={isTranscribing} onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (file) {
+              onAudioSelected(file);
+            }
+          }} type="file" />
+        </label>
+        <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-stitch border border-outline bg-surface-tonal text-sm font-semibold text-primary/75">
+          <ImagePlus size={17} />
+          <span>{isUploadingImage ? 'Ảnh...' : 'Ảnh'}</span>
+          <input accept="image/*" className="hidden" disabled={isUploadingImage} onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (file) {
+              onImageSelected(file);
+            }
+          }} type="file" />
+        </label>
+      </div>
+      {draftMedia.length ? (
+        <section className="rounded-stitch border border-outline bg-surface-tonal p-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-accent">Media đã gắn</h3>
+          <div className="grid gap-2">
+            {draftMedia.map((media) => (
+              <div className="flex items-center justify-between gap-2 rounded-stitch border border-outline bg-surface px-3 py-2" key={media.url}>
+                <span className="min-w-0 truncate text-xs text-primary/70">{media.type}: {media.url}</span>
+                <button aria-label="Remove media" className="grid h-8 w-8 place-items-center rounded-stitch border border-outline text-primary/65" onClick={() => setDraftMedia(draftMedia.filter((candidate) => candidate.url !== media.url))} type="button">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-stitch bg-accent text-base font-semibold text-on-accent disabled:opacity-40" disabled={!draftContent.trim() || isSaving} onClick={onSave} type="button">
+        <Save size={18} />
+        Lưu ghi chú
+      </button>
+    </div>
+  );
+}
+
+function LegacyComposeView({
+  topic,
+  draftContent,
+  draftTags,
+  draftStatus,
+  draftMedia,
+  setDraftContent,
+  setDraftTags,
+  setDraftStatus,
+  setDraftMedia,
+  onBack,
+  onTranscript,
+  onAudioSelected,
+  onImageSelected,
+  onSave,
+  isTranscribing,
+  isUploadingImage,
+  isSaving,
+}: {
+  topic?: Topic;
+  draftContent: string;
+  draftTags: string;
+  draftStatus: 'Draft' | 'Debating' | 'Final';
+  draftMedia: EntryMedia[];
+  setDraftContent: (value: string) => void;
+  setDraftTags: (value: string) => void;
+  setDraftStatus: (value: 'Draft' | 'Debating' | 'Final') => void;
+  setDraftMedia: (value: EntryMedia[]) => void;
+  onBack: () => void;
+  onTranscript: (text: string) => void;
+  onAudioSelected: (file: File) => void;
+  onImageSelected: (file: File) => void;
+  onSave: () => void;
+  isTranscribing: boolean;
+  isUploadingImage: boolean;
   isSaving: boolean;
 }) {
   return (
@@ -870,6 +1128,91 @@ function GraphView({ graph, entries, onBack }: { graph: { nodes: any[]; edges: a
 }
 
 function WorkflowView({
+  checklists,
+  users,
+  onCreateChecklist,
+  onToggleItem,
+  isCreating,
+  isUpdating,
+  onBack,
+}: {
+  checklists: Checklist[];
+  users: User[];
+  onCreateChecklist: (template: ChecklistTemplate) => void;
+  onToggleItem: (checklistId: string, item: Checklist['items'][number]) => void;
+  isCreating: boolean;
+  isUpdating: boolean;
+  onBack: () => void;
+}) {
+  const items = checklists.flatMap((checklist) => checklist.items.map((item) => ({ checklist, item })));
+  const done = items.filter(({ item }) => item.status === 'Done').length;
+  const review = items.filter(({ item }) => item.status === 'Review').length;
+  const hasTemplate = (template: ChecklistTemplate) => checklists.some((checklist) => checklist.template === template);
+
+  return (
+    <div className="space-y-4">
+      <ViewTitle icon={<ArrowLeft size={18} />} title="Quản lý Quy trình & Checklist" onClick={onBack} />
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Tiến độ</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Metric icon={<CheckSquare size={15} />} label="Done" value={`${done}/${items.length}`} />
+          <Metric icon={<Clock size={15} />} label="Review" value={review.toString()} />
+          <Metric icon={<Users size={15} />} label="DRI" value={users.length.toString()} />
+        </div>
+      </section>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">Template học tập</h2>
+        <div className="grid grid-cols-2 gap-2">
+          {(['Apple DRI', 'Google Design Sprint'] as ChecklistTemplate[]).map((template) => (
+            <button
+              className="rounded-stitch border border-outline bg-surface p-3 text-left text-sm disabled:opacity-45"
+              disabled={isCreating || hasTemplate(template)}
+              key={template}
+              onClick={() => onCreateChecklist(template)}
+              type="button"
+            >
+              <div className="font-semibold text-primary">{template}</div>
+              <p className="mt-1 text-xs leading-5 text-primary/55">{hasTemplate(template) ? 'Đã tạo cho topic này' : 'Tạo workflow chuẩn Stitch'}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Checklist</h2>
+          <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/70">{checklists.length} board</span>
+        </div>
+        <div className="space-y-3">
+          {checklists.length ? (
+            checklists.map((checklist) => (
+              <div className="rounded-stitch border border-outline bg-surface p-3" key={checklist._id}>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold">{checklist.template}</h3>
+                  <span className="text-xs text-primary/45">{checklist.items.filter((item) => item.status === 'Done').length}/{checklist.items.length}</span>
+                </div>
+                <div className="grid gap-2">
+                  {checklist.items.map((item) => (
+                    <button className="w-full rounded-stitch border border-outline bg-surface-tonal p-3 text-left disabled:opacity-60" disabled={isUpdating} key={item._id} onClick={() => onToggleItem(checklist._id, item)} type="button">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-semibold">{item.title}</span>
+                        <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/70">{item.status}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-primary/45">{item.phase ? `${item.phase} · ` : ''}DRI: {displayName(item.driUserId)}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Chưa có checklist. Hãy tạo Apple DRI hoặc Google Design Sprint.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LegacyWorkflowView({
   checklist,
   onCreateChecklist,
   onToggleItem,
@@ -928,6 +1271,116 @@ function WorkflowView({
   );
 }
 
+function SearchView({
+  query,
+  setQuery,
+  results,
+  isLoading,
+  onBack,
+  onSelectEntry,
+}: {
+  query: string;
+  setQuery: (value: string) => void;
+  results: Entry[];
+  isLoading: boolean;
+  onBack: () => void;
+  onSelectEntry: (entry: Entry) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <ViewTitle icon={<ArrowLeft size={18} />} title="Semantic Search" onClick={onBack} />
+      <label className="relative block">
+        <Search className="absolute left-3 top-3 text-primary/40" size={16} />
+        <input className="h-11 w-full rounded-stitch border border-outline bg-surface-tonal pl-9 pr-3 text-sm text-primary outline-none placeholder:text-primary/35 focus:border-accent" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nhập luận điểm, tag, từ khóa..." />
+      </label>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Kết quả</h2>
+          <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/65">{isLoading ? 'Đang tìm' : `${results.length} entry`}</span>
+        </div>
+        <div className="grid gap-2">
+          {results.map((entry) => (
+            <button className="rounded-stitch border border-outline bg-surface p-3 text-left hover:border-accent" key={entry._id} onClick={() => onSelectEntry(entry)} type="button">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="rounded-stitch bg-surface-tonal px-2 py-1 text-xs text-primary/70">{entry.status}</span>
+                {typeof entry.similarity === 'number' && <span className="text-xs text-accent">{Math.round(entry.similarity * 100)}%</span>}
+              </div>
+              <p className="text-sm leading-6 text-primary/75">{shortText(entry.content, 180)}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {entry.tags?.map((tag) => (
+                  <span className="rounded-stitch bg-surface-tonal px-2 py-1 text-xs text-primary/55" key={tag.name}>{tag.name}</span>
+                ))}
+              </div>
+            </button>
+          ))}
+          {!results.length && <p className="rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Chưa có kết quả phù hợp.</p>}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function WorkspaceView({
+  currentUser,
+  users,
+  groups,
+  topics,
+  onBack,
+  onTopicSelect,
+}: {
+  currentUser: User;
+  users: User[];
+  groups: Group[];
+  topics: Topic[];
+  onBack: () => void;
+  onTopicSelect: (topic: Topic) => void;
+}) {
+  const overdueTopics = topics.filter(isTopicOverdue);
+  return (
+    <div className="space-y-4">
+      <ViewTitle icon={<ArrowLeft size={18} />} title="Group & Timeline" onClick={onBack} />
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Người dùng hiện tại</p>
+        <h2 className="mt-2 text-xl font-semibold">{displayName(currentUser)}</h2>
+        <p className="mt-1 text-sm text-primary/55">{currentUser.email}</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Metric icon={<Users size={15} />} label="Members" value={users.length.toString()} />
+          <Metric icon={<FileText size={15} />} label="Topics" value={topics.length.toString()} />
+          <Metric icon={<Clock size={15} />} label="Overdue" value={overdueTopics.length.toString()} />
+        </div>
+      </section>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">Nhóm học tập</h2>
+        <div className="grid gap-2">
+          {groups.map((group) => (
+            <div className="rounded-stitch border border-outline bg-surface p-3" key={group._id}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-semibold">{group.name}</h3>
+                <span className="rounded-stitch bg-surface-tonal px-2 py-1 text-xs text-primary/60">{group.members.length} member</span>
+              </div>
+              <p className="mt-2 text-xs text-primary/45">Leader: {displayName(group.leaderId)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">Timeline Guard</h2>
+        <div className="grid gap-2">
+          {topics.map((topic) => (
+            <button className="rounded-stitch border border-outline bg-surface p-3 text-left hover:border-accent" key={topic._id} onClick={() => onTopicSelect(topic)} type="button">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold">{topic.title}</span>
+                <span className={`rounded-stitch px-2 py-1 text-xs ${isTopicOverdue(topic) ? 'bg-danger/15 text-danger' : 'bg-surface-tonal text-primary/65'}`}>{formatDate(topic.deadline)}</span>
+              </div>
+              <p className="mt-1 text-xs text-primary/45">{topic.category} · {topic.status}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ViewTitle({ icon, title, onClick }: { icon: ReactNode; title: string; onClick: () => void }) {
   return (
     <div className="flex items-center gap-3">
@@ -954,13 +1407,15 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
 function BottomNav({ activeView, onChange }: { activeView: ViewKey; onChange: (view: ViewKey) => void }) {
   const items: { key: ViewKey; label: string; icon: ReactNode }[] = [
     { key: 'home', label: 'Home', icon: <Home size={17} /> },
+    { key: 'search', label: 'Search', icon: <Search size={17} /> },
     { key: 'compose', label: 'Soạn', icon: <Edit3 size={17} /> },
     { key: 'graph', label: 'Graph', icon: <Network size={17} /> },
     { key: 'workflow', label: 'Việc', icon: <CheckSquare size={17} /> },
+    { key: 'workspace', label: 'Nhóm', icon: <Users size={17} /> },
   ];
 
   return (
-    <nav className="absolute inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-outline bg-surface-tonal/95 px-2 py-2 backdrop-blur">
+    <nav className="absolute inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-outline bg-surface-tonal/95 px-2 py-2 backdrop-blur">
       {items.map((item) => (
         <button className={`flex h-12 flex-col items-center justify-center gap-1 rounded-stitch text-xs font-semibold ${activeView === item.key ? 'text-accent' : 'text-primary/55'}`} key={item.key} onClick={() => onChange(item.key)} type="button">
           {item.icon}
