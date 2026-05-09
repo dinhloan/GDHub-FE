@@ -3,38 +3,66 @@ import { Checklist, ChecklistStatus, Entry, Group, Message, Topic, User } from '
 const defaultApiBaseUrl = () => {
   const protocol = typeof window === 'undefined' ? 'http:' : window.location.protocol;
   const hostname = typeof window === 'undefined' ? 'localhost' : window.location.hostname;
+  if (!['localhost', '127.0.0.1'].includes(hostname)) {
+    return '/api';
+  }
   return `${protocol}//${hostname}:4000/api`;
 };
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || defaultApiBaseUrl();
+const REQUEST_TIMEOUT_MS = 30000;
+const AI_REQUEST_TIMEOUT_MS = 90000;
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
+function unwrapResponse<T>(data: unknown): T {
+  if (data && typeof data === 'object' && 'value' in data) {
+    return (data as { value: T }).value;
   }
 
-  return response.json() as Promise<T>;
+  return data as T;
 }
 
-async function upload<T>(path: string, formData: FormData): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    body: formData,
-  });
+async function request<T>(path: string, options?: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+      signal: options?.signal ?? controller.signal,
+    });
 
-  if (!response.ok) {
-    throw new Error(await response.text());
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const text = await response.text();
+    return unwrapResponse<T>(text ? JSON.parse(text) : {});
+  } finally {
+    window.clearTimeout(timeoutId);
   }
+}
 
-  return response.json() as Promise<T>;
+async function upload<T>(path: string, formData: FormData, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return response.json() as Promise<T>;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 export const api = {
@@ -45,7 +73,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  topics: (groupId?: string) => request<Topic[]>(`/topics${groupId ? `?groupId=${groupId}` : ''}`),
+  topics: (groupId?: string) => request<Topic[]>(`/topics${groupId ? `?groupId=${encodeURIComponent(groupId)}` : ''}`),
   createTopic: (payload: {
     groupId: string;
     leaderId: string;
@@ -65,7 +93,7 @@ export const api = {
   messages: (entryId: string) => request<Message[]>(`/discussion/entries/${entryId}/messages`),
   checklists: (topicId: string) => request<Checklist[]>(`/checklists/topic/${topicId}`),
   createChecklistTemplate: (template: 'Apple DRI' | 'Google Design Sprint', payload: { topicId: string; driUserId: string }) =>
-    request<Checklist>(`/checklists/template/${encodeURIComponent(template)}?topicId=${payload.topicId}&driUserId=${payload.driUserId}`, {
+    request<Checklist>(`/checklists/template/${encodeURIComponent(template)}?topicId=${encodeURIComponent(payload.topicId)}&driUserId=${encodeURIComponent(payload.driUserId)}`, {
       method: 'POST',
     }),
   updateChecklistItem: (checklistId: string, itemId: string, payload: { status?: ChecklistStatus; title?: string; phase?: string }) =>
@@ -115,8 +143,17 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   critique: (payload: { content: string; template: '6 Thinking Hats' | '5W1H' }) =>
-    request<{ template: string; questions: string[]; source: string }>('/ai/critique', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    request<{ template: string; questions: string[]; source: string }>(
+      '/ai/critique',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      AI_REQUEST_TIMEOUT_MS,
+    ),
+  transcribe: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return upload<{ text: string; source: string }>('/ai/transcribe', formData, AI_REQUEST_TIMEOUT_MS);
+  },
 };

@@ -53,7 +53,7 @@ export function VoiceNoteButton({ onTranscript }: { onTranscript: (text: string)
     <button
       type="button"
       className={`grid h-10 w-10 place-items-center rounded border ${
-        listening ? 'border-alert bg-alert text-panel' : 'border-ink/10 bg-panel text-ink hover:border-moss'
+        listening ? 'border-alert bg-alert text-paper' : 'border-ink/10 bg-paper text-ink/70 hover:border-moss'
       }`}
       disabled={!supported}
       onClick={toggle}

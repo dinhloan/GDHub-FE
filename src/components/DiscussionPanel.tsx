@@ -53,9 +53,12 @@ export function DiscussionPanel({
   };
 
   return (
-    <section className="border-t border-ink/10 p-4">
+    <section className="rounded border border-ink/10 bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">Discussion</h2>
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Thảo luận</h2>
+          <p className="mt-1 text-xs text-ink/45">Phản biện theo ghi chú</p>
+        </div>
         <span className="rounded bg-paper px-2 py-1 text-xs text-ink/60">{messages.length}</span>
       </div>
       <div className="max-h-52 space-y-2 overflow-auto pr-1">
@@ -63,11 +66,11 @@ export function DiscussionPanel({
           const sender = typeof message.userId === 'string' ? undefined : message.userId;
           return (
             <div key={message._id} className="rounded border border-ink/10 bg-paper px-3 py-2">
-              <div className="mb-1 flex items-center justify-between gap-2 text-xs text-ink/50">
+              <div className="mb-1 flex items-center justify-between gap-2 text-xs text-ink/45">
                 <span>{sender?.name || sender?.username || 'Member'}</span>
                 <span>{new Date(message.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <p className="text-sm leading-5">{message.content}</p>
+              <p className="text-sm leading-5 text-ink/80">{message.content}</p>
             </div>
           );
         })}
@@ -76,14 +79,14 @@ export function DiscussionPanel({
       {error && <p className="mb-2 rounded border border-alert/25 bg-alert/10 px-3 py-2 text-xs text-alert">{error}</p>}
       <form className="mt-3 flex gap-2" onSubmit={submit}>
         <input
-          className="h-10 min-w-0 flex-1 rounded border border-ink/10 bg-panel px-3 text-sm outline-none focus:border-moss"
+          className="h-10 min-w-0 flex-1 rounded border border-ink/10 bg-paper px-3 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-moss"
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder="Add opinion"
         />
         <button
           aria-label="Send opinion"
-          className="grid h-10 w-10 place-items-center rounded bg-ink text-panel disabled:opacity-40"
+          className="grid h-10 w-10 place-items-center rounded bg-moss text-paper disabled:opacity-40"
           disabled={!content.trim() || !entry?._id || !user?._id || mutation.isPending}
         >
           <Send size={16} />

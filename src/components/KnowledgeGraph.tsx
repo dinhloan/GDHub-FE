@@ -22,14 +22,17 @@ export function KnowledgeGraph({ topicId, entries }: { topicId?: string; entries
   }, [entries, graphQuery.data, topicId]);
 
   return (
-    <section className="min-h-0 p-4">
+    <section className="min-h-0 rounded border border-ink/10 bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">Knowledge Graph</h2>
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Sơ đồ tri thức</h2>
+          <p className="mt-1 text-xs text-ink/45">Liên kết tag và luận điểm</p>
+        </div>
         <span className="rounded bg-paper px-2 py-1 text-xs text-ink/60">{nodes.length} nodes</span>
       </div>
-      <div className="h-[calc(100%-2.25rem)] min-h-56 overflow-hidden rounded border border-ink/10 bg-paper">
+      <div className="h-72 overflow-hidden rounded border border-ink/10 bg-paper lg:h-[330px]">
         <ReactFlow nodes={nodes} edges={edges} fitView>
-          <Background color="#d9d2c3" gap={18} />
+          <Background color="rgba(231,251,247,0.16)" gap={18} />
           <Controls showInteractive={false} />
         </ReactFlow>
       </div>

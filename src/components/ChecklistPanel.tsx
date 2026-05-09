@@ -60,9 +60,12 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
   const canCreateTemplate = Boolean(topicId && selectedDri?._id && !createTemplateMutation.isPending);
 
   return (
-    <section className="p-4">
+    <section className="rounded border border-ink/10 bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink/60">Checklist</h2>
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Checklist</h2>
+          <p className="mt-1 text-xs text-ink/45">Design Sprint và Apple DRI</p>
+        </div>
         <span className="rounded bg-paper px-2 py-1 text-xs text-ink/60">{primaryChecklist?.template ?? 'Custom'}</span>
       </div>
       {(error || checklistQuery.isError) && (
@@ -98,7 +101,7 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
                     {item.status}
                   </button>
                 </div>
-                <div className="text-xs text-ink/50">
+                <div className="text-xs text-ink/45">
                   {item.phase ? `${item.phase} · ` : ''}
                   {dri}
                 </div>
@@ -114,7 +117,7 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <button
-              className="h-9 rounded bg-ink px-3 text-sm font-medium text-panel disabled:opacity-40"
+              className="h-9 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-40"
               disabled={!canCreateTemplate}
               onClick={() => createTemplateMutation.mutate('Google Design Sprint')}
               type="button"

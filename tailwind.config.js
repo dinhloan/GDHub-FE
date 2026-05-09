@@ -4,15 +4,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#16211f',
-        moss: '#516b57',
-        amberline: '#d99a2b',
-        paper: '#f7f4ec',
-        panel: '#ffffff',
-        alert: '#b64232'
+        ink: '#e7fbf7',
+        moss: '#35e6d0',
+        amberline: '#ffb457',
+        paper: '#06161d',
+        panel: '#0b222b',
+        alert: '#ff6b7a'
       },
       boxShadow: {
-        soft: '0 12px 40px rgba(22, 33, 31, 0.08)'
+        soft: '0 18px 55px rgba(0, 0, 0, 0.34)'
       }
     },
   },
