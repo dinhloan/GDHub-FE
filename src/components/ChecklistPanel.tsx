@@ -60,16 +60,16 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
   const canCreateTemplate = Boolean(topicId && selectedDri?._id && !createTemplateMutation.isPending);
 
   return (
-    <section className="rounded border border-ink/10 bg-panel p-4 shadow-soft">
+    <section className="rounded-stitch border border-outline bg-surface-tonal p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Checklist</h2>
-          <p className="mt-1 text-xs text-ink/45">Design Sprint và Apple DRI</p>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Checklist</h2>
+          <p className="mt-1 text-xs text-primary/45">Design Sprint và Apple DRI</p>
         </div>
-        <span className="rounded bg-paper px-2 py-1 text-xs text-ink/60">{primaryChecklist?.template ?? 'Custom'}</span>
+        <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/60">{primaryChecklist?.template ?? 'Custom'}</span>
       </div>
       {(error || checklistQuery.isError) && (
-        <p className="mb-2 rounded border border-alert/25 bg-alert/10 px-3 py-2 text-xs text-alert">
+        <p className="mb-2 rounded-stitch border border-danger/25 bg-danger/10 px-3 py-2 text-xs text-danger">
           {error || 'Không tải được checklist. Đang hiển thị dữ liệu mẫu nếu có.'}
         </p>
       )}
@@ -79,14 +79,14 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
           {primaryChecklist.items.map((item) => {
             const dri = typeof item.driUserId === 'string' ? 'DRI' : item.driUserId.name;
             return (
-              <div key={item._id} className="rounded border border-ink/10 bg-paper px-3 py-2">
+              <div key={item._id} className="rounded-stitch border border-outline bg-surface px-3 py-2">
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-moss">{statusIcon[item.status]}</span>
+                    <span className="text-accent">{statusIcon[item.status]}</span>
                     <span className="truncate text-sm font-medium">{item.title}</span>
                   </div>
                   <button
-                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded border border-ink/10 bg-panel px-2 text-xs text-ink/70 hover:border-moss disabled:opacity-50"
+                    className="inline-flex h-8 shrink-0 items-center gap-1 rounded-stitch border border-outline bg-surface-tonal px-2 text-xs text-primary/70 hover:border-accent disabled:opacity-50"
                     disabled={updateItemMutation.isPending || checklistQuery.isError}
                     onClick={() =>
                       updateItemMutation.mutate({
@@ -101,7 +101,7 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
                     {item.status}
                   </button>
                 </div>
-                <div className="text-xs text-ink/45">
+                <div className="text-xs text-primary/45">
                   {item.phase ? `${item.phase} · ` : ''}
                   {dri}
                 </div>
@@ -110,14 +110,14 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
           })}
         </div>
       ) : (
-        <div className="rounded border border-dashed border-ink/20 bg-paper p-3">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-ink/70">
+        <div className="rounded-stitch border border-dashed border-outline-strong bg-surface p-3">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-primary/70">
             <ListPlus size={16} />
             <span>Start a workflow template</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <button
-              className="h-9 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-40"
+              className="h-9 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-40"
               disabled={!canCreateTemplate}
               onClick={() => createTemplateMutation.mutate('Google Design Sprint')}
               type="button"
@@ -125,7 +125,7 @@ export function ChecklistPanel({ topicId, fallback, users }: { topicId?: string;
               Design Sprint
             </button>
             <button
-              className="h-9 rounded border border-ink/10 bg-panel px-3 text-sm font-medium text-ink disabled:opacity-40"
+              className="h-9 rounded-stitch border border-outline bg-surface-tonal px-3 text-sm font-medium text-primary disabled:opacity-40"
               disabled={!canCreateTemplate}
               onClick={() => createTemplateMutation.mutate('Apple DRI')}
               type="button"

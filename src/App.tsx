@@ -381,22 +381,22 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
   };
 
   return (
-    <main className="min-h-screen bg-[#05161d] text-[#e7fbf7] md:grid md:place-items-center">
-      <section className="relative mx-auto min-h-screen w-full max-w-[430px] bg-[#061b23] pb-24 md:min-h-[880px] md:overflow-hidden md:rounded md:border md:border-white/10 md:shadow-soft">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#061b23]/95 px-4 py-3 backdrop-blur">
+    <main className="min-h-screen bg-canvas text-primary md:grid md:place-items-center">
+      <section className="relative mx-auto min-h-screen w-full max-w-shell bg-app-shell pb-24 md:min-h-shell md:overflow-hidden md:rounded-stitch md:border md:border-outline md:shadow-soft">
+        <header className="sticky top-0 z-30 border-b border-outline bg-app-shell/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Intellectual Synergy</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Intellectual Synergy</p>
               <h1 className="truncate text-lg font-semibold">{activeTopic?.title ?? 'Collaborative Knowledge Diary Hub'}</h1>
             </div>
-            <button aria-label="Logout" className="grid h-10 w-10 place-items-center rounded border border-white/10 bg-paper text-ink/75" onClick={onLogout} type="button">
+            <button aria-label="Logout" className="grid h-10 w-10 place-items-center rounded-stitch border border-outline bg-surface text-primary/75" onClick={onLogout} type="button">
               <LogOut size={17} />
             </button>
           </div>
           <label className="relative mt-3 block">
-            <Search className="absolute left-3 top-2.5 text-ink/40" size={16} />
+            <Search className="absolute left-3 top-2.5 text-primary/40" size={16} />
             <input
-              className="h-10 w-full rounded border border-white/10 bg-paper pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-moss"
+              className="h-10 w-full rounded-stitch border border-outline bg-surface pl-9 pr-3 text-sm text-primary outline-none placeholder:text-primary/35 focus:border-accent"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Tìm ghi chú, tag, luận điểm..."
@@ -406,7 +406,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
 
         <div className="px-4 py-4">
           {mutationError && (
-            <p className="mb-4 rounded border border-alert/25 bg-alert/10 px-3 py-2 text-sm leading-6 text-alert">{mutationError}</p>
+            <p className="mb-4 rounded-stitch border border-danger/25 bg-danger/10 px-3 py-2 text-sm leading-6 text-danger">{mutationError}</p>
           )}
           {activeView === 'home' && (
             <DashboardView
@@ -524,17 +524,17 @@ function DashboardView({
 
   return (
     <div className="space-y-4">
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <p className="text-sm text-ink/55">Chào buổi sáng, {displayName(currentUser)}</p>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-sm text-primary/55">Chào buổi sáng, {displayName(currentUser)}</p>
         <h2 className="mt-2 text-2xl font-semibold leading-tight">Chủ đề hôm nay</h2>
         {activeTopic ? (
-          <button className="mt-4 w-full rounded border border-moss/70 bg-moss/10 p-4 text-left" onClick={() => onTopicSelect(activeTopic)} type="button">
+          <button className="mt-4 w-full rounded-stitch border border-accent/70 bg-accent/10 p-4 text-left" onClick={() => onTopicSelect(activeTopic)} type="button">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="rounded bg-moss px-2 py-1 text-xs font-bold text-paper">{activeTopic.category || 'Tech'}</span>
-              <span className="rounded bg-paper px-2 py-1 text-xs text-ink/70">{activeTopic.status || 'Open'}</span>
+              <span className="rounded-stitch bg-accent px-2 py-1 text-xs font-bold text-on-accent">{activeTopic.category || 'Tech'}</span>
+              <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/70">{activeTopic.status || 'Open'}</span>
             </div>
             <h3 className="text-xl font-semibold">{activeTopic.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-ink/65">{activeTopic.description}</p>
+            <p className="mt-2 text-sm leading-6 text-primary/65">{activeTopic.description}</p>
             <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
               <Metric icon={<FileText size={15} />} label="Ghi chú" value={entries.length.toString()} />
               <Metric icon={<Users size={15} />} label="Nhóm" value="1" />
@@ -542,20 +542,20 @@ function DashboardView({
             </div>
           </button>
         ) : (
-          <p className="mt-4 rounded border border-dashed border-white/10 bg-paper p-4 text-sm text-ink/60">Database chưa có topic.</p>
+          <p className="mt-4 rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Database chưa có topic.</p>
         )}
       </section>
 
-      <section className="rounded border border-white/10 bg-panel p-4">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-moss">Chủ đề đang hoạt động</h2>
-            <p className="mt-1 text-xs text-ink/45">{topics.length} chủ đề</p>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Chủ đề đang hoạt động</h2>
+            <p className="mt-1 text-xs text-primary/45">{topics.length} chủ đề</p>
           </div>
           <div className="flex gap-2">
             <button
               aria-label="Create topic"
-              className="grid h-10 w-10 place-items-center rounded border border-white/10 bg-paper text-ink/70 disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-stitch border border-outline bg-surface text-primary/70 disabled:opacity-40"
               disabled={!canCreateTopic}
               onClick={() => setIsTopicFormOpen((value) => !value)}
               title={canCreateTopic ? 'Tạo topic' : 'Chỉ trưởng nhóm mới tạo được topic'}
@@ -563,27 +563,27 @@ function DashboardView({
             >
               <Sparkles size={18} />
             </button>
-            <button aria-label="Create entry" className="grid h-10 w-10 place-items-center rounded bg-amberline text-paper" onClick={onNewEntry} type="button">
+            <button aria-label="Create entry" className="grid h-10 w-10 place-items-center rounded-stitch bg-attention text-on-accent" onClick={onNewEntry} type="button">
               <Plus size={19} />
             </button>
           </div>
         </div>
         {isTopicFormOpen && (
-          <form className="mb-3 grid gap-2 rounded border border-moss/25 bg-moss/5 p-3" onSubmit={submitTopic}>
+          <form className="mb-3 grid gap-2 rounded-stitch border border-accent/25 bg-accent/5 p-3" onSubmit={submitTopic}>
             <input
-              className="h-10 rounded border border-white/10 bg-paper px-3 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-moss"
+              className="h-10 rounded-stitch border border-outline bg-surface px-3 text-sm text-primary outline-none placeholder:text-primary/35 focus:border-accent"
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Tên topic"
               value={title}
             />
             <textarea
-              className="min-h-20 resize-none rounded border border-white/10 bg-paper px-3 py-2 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-moss"
+              className="min-h-20 resize-none rounded-stitch border border-outline bg-surface px-3 py-2 text-sm text-primary outline-none placeholder:text-primary/35 focus:border-accent"
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Mô tả"
               value={description}
             />
             <div className="grid grid-cols-2 gap-2">
-              <select className="h-10 rounded border border-white/10 bg-paper px-2 text-sm text-ink outline-none focus:border-moss" onChange={(event) => setCategory(event.target.value)} value={category}>
+              <select className="h-10 rounded-stitch border border-outline bg-surface px-2 text-sm text-primary outline-none focus:border-accent" onChange={(event) => setCategory(event.target.value)} value={category}>
                 <option>Science</option>
                 <option>Tech</option>
                 <option>Life</option>
@@ -591,9 +591,9 @@ function DashboardView({
                 <option>Business</option>
                 <option>Other</option>
               </select>
-              <input className="h-10 rounded border border-white/10 bg-paper px-2 text-sm text-ink outline-none focus:border-moss" onChange={(event) => setDeadline(event.target.value)} type="date" value={deadline} />
+              <input className="h-10 rounded-stitch border border-outline bg-surface px-2 text-sm text-primary outline-none focus:border-accent" onChange={(event) => setDeadline(event.target.value)} type="date" value={deadline} />
             </div>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-45" disabled={!title.trim() || isCreatingTopic} type="submit">
+            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-45" disabled={!title.trim() || isCreatingTopic} type="submit">
               <Save size={16} />
               Lưu topic
             </button>
@@ -601,12 +601,12 @@ function DashboardView({
         )}
         <div className="grid gap-3">
           {topics.map((topic) => (
-            <button className="rounded border border-white/10 bg-paper p-3 text-left hover:border-moss" key={topic._id} onClick={() => onTopicSelect(topic)} type="button">
+            <button className="rounded-stitch border border-outline bg-surface p-3 text-left hover:border-accent" key={topic._id} onClick={() => onTopicSelect(topic)} type="button">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-semibold">{topic.title}</h3>
-                <CheckCircle2 className="text-moss" size={17} />
+                <CheckCircle2 className="text-accent" size={17} />
               </div>
-              <p className="mt-2 line-clamp-2 text-sm leading-6 text-ink/60">{topic.description}</p>
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-primary/60">{topic.description}</p>
             </button>
           ))}
         </div>
@@ -649,13 +649,13 @@ function DetailView({
   return (
     <div className="space-y-4">
       <ViewTitle icon={<ArrowLeft size={18} />} title={activeTopic?.title ?? 'Chi tiết'} onClick={onBack} />
-      <section className="rounded border border-white/10 bg-panel p-4">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="mb-3 flex flex-wrap gap-2">
-          <span className="rounded bg-moss/15 px-2 py-1 text-xs font-semibold text-moss">{activeTopic?.category ?? 'Tech'}</span>
-          <span className="rounded bg-paper px-2 py-1 text-xs text-ink/70">{activeTopic?.status ?? 'Open'}</span>
+          <span className="rounded-stitch bg-accent/15 px-2 py-1 text-xs font-semibold text-accent">{activeTopic?.category ?? 'Tech'}</span>
+          <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/70">{activeTopic?.status ?? 'Open'}</span>
         </div>
         <h2 className="text-2xl font-semibold leading-tight">{activeTopic?.title}</h2>
-        <p className="mt-3 text-sm leading-6 text-ink/65">{activeTopic?.description}</p>
+        <p className="mt-3 text-sm leading-6 text-primary/65">{activeTopic?.description}</p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           <Metric icon={<FileText size={15} />} label="Entries" value={entries.length.toString()} />
           <Metric icon={<GitBranch size={15} />} label="Debating" value={entries.filter((entry) => entry.status === 'Debating').length.toString()} />
@@ -663,67 +663,67 @@ function DetailView({
         </div>
       </section>
 
-      <section className="rounded border border-white/10 bg-panel p-4">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-moss">Luận điểm chính</h2>
-          <button className="grid h-10 w-10 place-items-center rounded bg-amberline text-paper" onClick={onCompose} type="button">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Luận điểm chính</h2>
+          <button className="grid h-10 w-10 place-items-center rounded-stitch bg-attention text-on-accent" onClick={onCompose} type="button">
             <Edit3 size={18} />
           </button>
         </div>
         {activeEntry ? (
-          <article className="rounded border border-amberline/60 bg-amberline/10 p-4">
+          <article className="rounded-stitch border border-attention/60 bg-attention/10 p-4">
             <div className="mb-2 flex items-center gap-2">
-              <FileText size={17} className="text-moss" />
+              <FileText size={17} className="text-accent" />
               <span className="font-semibold">{activeEntry.status}</span>
             </div>
-            <p className="text-sm leading-6 text-ink/80">{activeEntry.content}</p>
+            <p className="text-sm leading-6 text-primary/80">{activeEntry.content}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {activeEntry.tags?.map((tag) => (
-                <span className="rounded bg-paper px-2 py-1 text-xs text-ink/65" key={tag.name}>
+                <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/65" key={tag.name}>
                   {tag.name}
                 </span>
               ))}
             </div>
           </article>
         ) : (
-          <p className="rounded border border-dashed border-white/10 bg-paper p-4 text-sm text-ink/60">Chưa có entry.</p>
+          <p className="rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Chưa có entry.</p>
         )}
       </section>
 
-      <section className="rounded border border-white/10 bg-panel p-4">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-moss">Tác động</h2>
-            <p className="text-xs text-ink/45">AI phản biện và thảo luận</p>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Tác động</h2>
+            <p className="text-xs text-primary/45">AI phản biện và thảo luận</p>
           </div>
-          <button className="inline-flex h-9 items-center gap-2 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-45" disabled={!activeEntry || isCritiquing} onClick={onCritique} type="button">
+          <button className="inline-flex h-9 items-center gap-2 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-45" disabled={!activeEntry || isCritiquing} onClick={onCritique} type="button">
             <Bot size={16} />
             AI
           </button>
         </div>
         <div className="space-y-2">
           {(critique.length ? critique : ['AI sẽ đặt câu hỏi 5W1H để nhóm kiểm tra giả định và rủi ro.']).map((item) => (
-            <p className="rounded bg-paper px-3 py-2 text-sm leading-6 text-ink/70" key={item}>
+            <p className="rounded-stitch bg-surface px-3 py-2 text-sm leading-6 text-primary/70" key={item}>
               {item}
             </p>
           ))}
         </div>
-        <button className="mt-3 inline-flex h-9 items-center gap-2 rounded border border-white/10 bg-paper px-3 text-sm text-ink/75" onClick={onGraph} type="button">
+        <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-stitch border border-outline bg-surface px-3 text-sm text-primary/75" onClick={onGraph} type="button">
           <Network size={16} />
           Sơ đồ tri thức
         </button>
       </section>
 
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-moss">Thảo luận</h2>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">Thảo luận</h2>
         <div className="max-h-52 space-y-2 overflow-auto">
           {messages.map((message) => (
-            <div className="rounded bg-paper px-3 py-2" key={message._id}>
-              <div className="mb-1 flex justify-between gap-2 text-xs text-ink/45">
+            <div className="rounded-stitch bg-surface px-3 py-2" key={message._id}>
+              <div className="mb-1 flex justify-between gap-2 text-xs text-primary/45">
                 <span>{displayName(message.userId)}</span>
                 <span>{new Date(message.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <p className="text-sm leading-6 text-ink/80">{message.content}</p>
+              <p className="text-sm leading-6 text-primary/80">{message.content}</p>
             </div>
           ))}
         </div>
@@ -736,8 +736,8 @@ function DetailView({
             }
           }}
         >
-          <input className="h-10 min-w-0 flex-1 rounded border border-white/10 bg-paper px-3 text-sm text-ink outline-none focus:border-moss" value={messageContent} onChange={(event) => setMessageContent(event.target.value)} placeholder="Ý kiến của bạn" />
-          <button aria-label="Send opinion" className="grid h-10 w-10 place-items-center rounded bg-moss text-paper disabled:opacity-40" disabled={!messageContent.trim() || isSending} type="submit">
+          <input className="h-10 min-w-0 flex-1 rounded-stitch border border-outline bg-surface px-3 text-sm text-primary outline-none focus:border-accent" value={messageContent} onChange={(event) => setMessageContent(event.target.value)} placeholder="Ý kiến của bạn" />
+          <button aria-label="Send opinion" className="grid h-10 w-10 place-items-center rounded-stitch bg-accent text-on-accent disabled:opacity-40" disabled={!messageContent.trim() || isSending} type="submit">
             <Send size={16} />
           </button>
         </form>
@@ -776,21 +776,21 @@ function ComposeView({
   return (
     <div className="space-y-4">
       <ViewTitle icon={<ArrowLeft size={18} />} title="Soạn thảo" onClick={onBack} />
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Topic</p>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Topic</p>
         <h2 className="mt-2 text-xl font-semibold">{topic?.title}</h2>
       </section>
-      <textarea className="min-h-72 w-full resize-none rounded border border-white/10 bg-panel p-4 text-base leading-7 text-ink outline-none placeholder:text-ink/35 focus:border-moss" value={draftContent} onChange={(event) => setDraftContent(event.target.value)} placeholder="Ghi lại luận điểm, phản biện hoặc transcript..." />
+      <textarea className="min-h-72 w-full resize-none rounded-stitch border border-outline bg-surface-tonal p-4 text-base leading-7 text-primary outline-none placeholder:text-primary/35 focus:border-accent" value={draftContent} onChange={(event) => setDraftContent(event.target.value)} placeholder="Ghi lại luận điểm, phản biện hoặc transcript..." />
       <label className="relative block">
-        <Tags className="absolute left-3 top-3 text-ink/40" size={16} />
-        <input className="h-11 w-full rounded border border-white/10 bg-panel pl-9 pr-3 text-sm text-ink outline-none focus:border-moss" value={draftTags} onChange={(event) => setDraftTags(event.target.value)} placeholder="tags" />
+        <Tags className="absolute left-3 top-3 text-primary/40" size={16} />
+        <input className="h-11 w-full rounded-stitch border border-outline bg-surface-tonal pl-9 pr-3 text-sm text-primary outline-none focus:border-accent" value={draftTags} onChange={(event) => setDraftTags(event.target.value)} placeholder="tags" />
       </label>
-      <select className="h-11 w-full rounded border border-white/10 bg-panel px-3 text-sm text-ink outline-none focus:border-moss" value={draftStatus} onChange={(event) => setDraftStatus(event.target.value as 'Draft' | 'Debating' | 'Final')}>
+      <select className="h-11 w-full rounded-stitch border border-outline bg-surface-tonal px-3 text-sm text-primary outline-none focus:border-accent" value={draftStatus} onChange={(event) => setDraftStatus(event.target.value as 'Draft' | 'Debating' | 'Final')}>
         <option>Draft</option>
         <option>Debating</option>
         <option>Final</option>
       </select>
-      <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded border border-white/10 bg-panel text-sm font-semibold text-ink/75">
+      <label className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-stitch border border-outline bg-surface-tonal text-sm font-semibold text-primary/75">
         <Upload size={17} />
         {isTranscribing ? 'Đang chuyển giọng nói...' : 'Upload audio'}
         <input
@@ -807,7 +807,7 @@ function ComposeView({
           type="file"
         />
       </label>
-      <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded bg-moss text-base font-semibold text-paper disabled:opacity-40" disabled={!draftContent.trim() || isSaving} onClick={onSave} type="button">
+      <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-stitch bg-accent text-base font-semibold text-on-accent disabled:opacity-40" disabled={!draftContent.trim() || isSaving} onClick={onSave} type="button">
         <Save size={18} />
         Lưu ghi chú
       </button>
@@ -819,19 +819,19 @@ function GraphView({ graph, entries, onBack }: { graph: { nodes: any[]; edges: a
   return (
     <div className="space-y-4">
       <ViewTitle icon={<ArrowLeft size={18} />} title="Sơ đồ tri thức" onClick={onBack} />
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <div className="h-80 overflow-hidden rounded border border-white/10 bg-paper">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <div className="h-80 overflow-hidden rounded-stitch border border-outline bg-surface">
           <ReactFlow nodes={graph.nodes} edges={graph.edges} fitView>
             <Background color="rgba(231,251,247,0.16)" gap={18} />
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
       </section>
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-moss">Liên kết</h2>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">Liên kết</h2>
         <div className="space-y-2">
           {entries.map((entry) => (
-            <p className="rounded bg-paper p-3 text-sm leading-6 text-ink/70" key={entry._id}>
+            <p className="rounded-stitch bg-surface p-3 text-sm leading-6 text-primary/70" key={entry._id}>
               {entry.content}
             </p>
           ))}
@@ -861,34 +861,34 @@ function WorkflowView({
   return (
     <div className="space-y-4">
       <ViewTitle icon={<ArrowLeft size={18} />} title="Quản lý Quy trình & Checklist" onClick={onBack} />
-      <section className="rounded border border-white/10 bg-panel p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-moss">Tiến độ</p>
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Tiến độ</p>
         <div className="mt-3 grid grid-cols-3 gap-2">
           <Metric icon={<CheckSquare size={15} />} label="Done" value={`${done}/${total}`} />
           <Metric icon={<Clock size={15} />} label="Review" value={(checklist?.items.filter((item) => item.status === 'Review').length ?? 0).toString()} />
           <Metric icon={<Users size={15} />} label="DRI" value="1" />
         </div>
       </section>
-      <section className="rounded border border-white/10 bg-panel p-4">
+      <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-moss">Checklist</h2>
-          <span className="rounded bg-paper px-2 py-1 text-xs text-ink/70">{checklist?.template ?? 'Custom'}</span>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">Checklist</h2>
+          <span className="rounded-stitch bg-surface px-2 py-1 text-xs text-primary/70">{checklist?.template ?? 'Custom'}</span>
         </div>
         <div className="space-y-2">
           {checklist ? (
             checklist.items.map((item) => (
-              <button className="w-full rounded border border-white/10 bg-paper p-3 text-left disabled:opacity-60" disabled={isUpdating} key={item._id} onClick={() => onToggleItem(item)} type="button">
+              <button className="w-full rounded-stitch border border-outline bg-surface p-3 text-left disabled:opacity-60" disabled={isUpdating} key={item._id} onClick={() => onToggleItem(item)} type="button">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold">{item.title}</span>
-                  <span className="rounded bg-panel px-2 py-1 text-xs text-ink/70">{item.status}</span>
+                  <span className="rounded-stitch bg-surface-tonal px-2 py-1 text-xs text-primary/70">{item.status}</span>
                 </div>
-                <p className="mt-1 text-xs text-ink/45">{item.phase ? `${item.phase} · ` : ''}DRI</p>
+                <p className="mt-1 text-xs text-primary/45">{item.phase ? `${item.phase} · ` : ''}DRI</p>
               </button>
             ))
           ) : (
-            <div className="rounded border border-dashed border-white/10 bg-paper p-4">
-              <p className="text-sm text-ink/60">Chưa có checklist.</p>
-              <button className="mt-3 inline-flex h-10 items-center gap-2 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-45" disabled={isCreating} onClick={onCreateChecklist} type="button">
+            <div className="rounded-stitch border border-dashed border-outline bg-surface p-4">
+              <p className="text-sm text-primary/60">Chưa có checklist.</p>
+              <button className="mt-3 inline-flex h-10 items-center gap-2 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-45" disabled={isCreating} onClick={onCreateChecklist} type="button">
                 <Plus size={16} />
                 Tạo checklist
               </button>
@@ -903,7 +903,7 @@ function WorkflowView({
 function ViewTitle({ icon, title, onClick }: { icon: ReactNode; title: string; onClick: () => void }) {
   return (
     <div className="flex items-center gap-3">
-      <button className="grid h-10 w-10 place-items-center rounded border border-white/10 bg-panel text-ink" onClick={onClick} type="button">
+      <button className="grid h-10 w-10 place-items-center rounded-stitch border border-outline bg-surface-tonal text-primary" onClick={onClick} type="button">
         {icon}
       </button>
       <h2 className="min-w-0 flex-1 text-xl font-semibold leading-tight">{title}</h2>
@@ -913,8 +913,8 @@ function ViewTitle({ icon, title, onClick }: { icon: ReactNode; title: string; o
 
 function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded border border-white/10 bg-paper px-3 py-2">
-      <div className="mb-1 flex items-center gap-2 text-ink/45">
+    <div className="rounded-stitch border border-outline bg-surface px-3 py-2">
+      <div className="mb-1 flex items-center gap-2 text-primary/45">
         {icon}
         <span className="text-xs">{label}</span>
       </div>
@@ -932,9 +932,9 @@ function BottomNav({ activeView, onChange }: { activeView: ViewKey; onChange: (v
   ];
 
   return (
-    <nav className="absolute inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-white/10 bg-panel/95 px-2 py-2 backdrop-blur">
+    <nav className="absolute inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-outline bg-surface-tonal/95 px-2 py-2 backdrop-blur">
       {items.map((item) => (
-        <button className={`flex h-12 flex-col items-center justify-center gap-1 rounded text-xs font-semibold ${activeView === item.key ? 'text-moss' : 'text-ink/55'}`} key={item.key} onClick={() => onChange(item.key)} type="button">
+        <button className={`flex h-12 flex-col items-center justify-center gap-1 rounded-stitch text-xs font-semibold ${activeView === item.key ? 'text-accent' : 'text-primary/55'}`} key={item.key} onClick={() => onChange(item.key)} type="button">
           {item.icon}
           <span>{item.label}</span>
         </button>

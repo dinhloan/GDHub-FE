@@ -129,15 +129,15 @@ export function EntryEditor({
   };
 
   return (
-    <div className="flex min-h-[560px] flex-col rounded border border-ink/10 bg-panel shadow-soft">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
+    <div className="flex min-h-editor flex-col rounded-stitch border border-outline bg-surface-tonal shadow-soft">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-outline px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Soạn thảo</h2>
-          <p className="mt-1 text-xs text-ink/45">{activeEntry ? author?.name || author?.username || 'Local member' : 'New note'}</p>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Soạn thảo</h2>
+          <p className="mt-1 text-xs text-primary/45">{activeEntry ? author?.name || author?.username || 'Local member' : 'New note'}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="inline-flex h-10 items-center gap-2 rounded border border-ink/10 bg-paper px-3 text-sm font-medium text-ink/75 hover:border-amberline"
+            className="inline-flex h-10 items-center gap-2 rounded-stitch border border-outline bg-surface px-3 text-sm font-medium text-primary/75 hover:border-attention"
             onClick={startNewEntry}
             type="button"
           >
@@ -147,7 +147,7 @@ export function EntryEditor({
           {activeEntry && (
             <button
               aria-label="Delete note"
-              className="grid h-10 w-10 place-items-center rounded border border-ink/10 bg-paper text-ink/70 hover:border-alert hover:text-alert disabled:opacity-45"
+              className="grid h-10 w-10 place-items-center rounded-stitch border border-outline bg-surface text-primary/70 hover:border-danger hover:text-danger disabled:opacity-45"
               disabled={deleteMutation.isPending}
               onClick={() => {
                 if (window.confirm('Xóa ghi chú này?')) {
@@ -163,7 +163,7 @@ export function EntryEditor({
           <input accept="image/*" className="hidden" onChange={handleImageChange} ref={fileInputRef} type="file" />
           <button
             aria-label="Attach image"
-            className="grid h-10 w-10 place-items-center rounded border border-ink/10 bg-paper text-ink/70 hover:border-moss disabled:opacity-45"
+            className="grid h-10 w-10 place-items-center rounded-stitch border border-outline bg-surface text-primary/70 hover:border-accent disabled:opacity-45"
             disabled={imageMutation.isPending}
             onClick={() => fileInputRef.current?.click()}
             title="Attach image"
@@ -173,7 +173,7 @@ export function EntryEditor({
           </button>
           <VoiceNoteButton onTranscript={handleTranscript} />
           <button
-            className="inline-flex h-10 items-center gap-2 rounded bg-moss px-3 text-sm font-semibold text-paper disabled:opacity-40"
+            className="inline-flex h-10 items-center gap-2 rounded-stitch bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-40"
             disabled={!content.trim() || !topic?._id || !author?._id || saveMutation.isPending || imageMutation.isPending}
             onClick={() => saveMutation.mutate()}
           >
@@ -184,9 +184,9 @@ export function EntryEditor({
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {error && <p className="rounded border border-alert/25 bg-alert/10 px-3 py-2 text-sm text-alert">{error}</p>}
+        {error && <p className="rounded-stitch border border-danger/25 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
         <textarea
-          className="min-h-64 flex-1 resize-none rounded border border-ink/10 bg-paper p-4 text-base leading-7 text-ink outline-none placeholder:text-ink/35 focus:border-moss"
+          className="min-h-64 flex-1 resize-none rounded-stitch border border-outline bg-surface p-4 text-base leading-7 text-primary outline-none placeholder:text-primary/35 focus:border-accent"
           value={content}
           onChange={(event) => setDraftContent(event.target.value)}
           placeholder="Ghi lại quan sát, transcript, luận điểm hoặc phản biện..."
@@ -195,11 +195,11 @@ export function EntryEditor({
         {media.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {media.map((item) => (
-              <div className="relative overflow-hidden rounded border border-ink/10 bg-paper" key={item.url}>
+              <div className="relative overflow-hidden rounded-stitch border border-outline bg-surface" key={item.url}>
                 <img alt="Entry attachment" className="h-32 w-full object-cover" src={item.url} />
                 <button
                   aria-label="Remove image"
-                  className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded bg-panel text-ink shadow-soft hover:text-alert"
+                  className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-stitch bg-surface-tonal text-primary shadow-soft hover:text-danger"
                   onClick={() => setMedia((current) => current.filter((candidate) => candidate.url !== item.url))}
                   type="button"
                 >
@@ -207,22 +207,22 @@ export function EntryEditor({
                 </button>
               </div>
             ))}
-            <p className="text-xs leading-5 text-ink/55 sm:col-span-2 xl:col-span-3">Remove or add images, then press Update/Save to persist the note.</p>
+            <p className="text-xs leading-5 text-primary/55 sm:col-span-2 xl:col-span-3">Remove or add images, then press Update/Save to persist the note.</p>
           </div>
         )}
 
-        <div className="grid gap-3 md:grid-cols-[1fr_180px]">
+        <div className="grid gap-3 md:grid-cols-editor">
           <label className="relative block">
-            <Tags className="absolute left-3 top-3 text-ink/40" size={16} />
+            <Tags className="absolute left-3 top-3 text-primary/40" size={16} />
             <input
-              className="h-10 w-full rounded border border-ink/10 bg-paper pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink/35 focus:border-moss"
+              className="h-10 w-full rounded-stitch border border-outline bg-surface pl-9 pr-3 text-sm text-primary outline-none placeholder:text-primary/35 focus:border-accent"
               value={tagInput}
               onChange={(event) => setTagInput(event.target.value)}
               placeholder="tags"
             />
           </label>
           <select
-            className="h-10 rounded border border-ink/10 bg-paper px-3 text-sm text-ink outline-none focus:border-moss"
+            className="h-10 rounded-stitch border border-outline bg-surface px-3 text-sm text-primary outline-none focus:border-accent"
             value={status}
             onChange={(event) => setStatus(event.target.value as 'Draft' | 'Debating' | 'Final')}
           >
@@ -233,14 +233,14 @@ export function EntryEditor({
         </div>
 
         {(status === 'Debating' || activeEntry?.status === 'Debating') && (
-          <div className="rounded border border-amberline/35 bg-amberline/10 p-4">
+          <div className="rounded-stitch border border-attention/35 bg-attention/10 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold">AI Critic</h3>
-                <p className="text-xs text-ink/60">5W1H, four expert perspectives</p>
+                <p className="text-xs text-primary/60">5W1H, four expert perspectives</p>
               </div>
               <button
-                className="inline-flex h-9 items-center gap-2 rounded bg-amberline px-3 text-sm font-semibold text-paper disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-stitch bg-attention px-3 text-sm font-semibold text-on-accent disabled:opacity-50"
                 disabled={!content.trim() || critiqueMutation.isPending}
                 onClick={() => critiqueMutation.mutate()}
               >
@@ -250,7 +250,7 @@ export function EntryEditor({
             </div>
             <div className="space-y-2">
               {(critique.length ? critique : ['AI critique will appear here when requested.']).map((question) => (
-                <p key={question} className="rounded bg-panel px-3 py-2 text-sm leading-6 text-ink/75">
+                <p key={question} className="rounded-stitch bg-surface-tonal px-3 py-2 text-sm leading-6 text-primary/75">
                   {question}
                 </p>
               ))}
