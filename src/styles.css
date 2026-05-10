@@ -10,9 +10,9 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    radial-gradient(circle at top left, var(--color-accent-tonal), transparent 30rem),
-    linear-gradient(180deg, var(--color-app-shell) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
-  font-family: var(--font-sans);
+    radial-gradient(circle at top left, var(--md-sys-color-accent-tonal), transparent 30rem),
+    linear-gradient(180deg, var(--md-sys-color-app-shell) 0%, var(--md-sys-color-canvas-mid) 45%, var(--md-sys-color-canvas) 100%);
+  font-family: var(--md-sys-font-sans);
 }
 
 button,
@@ -23,21 +23,21 @@ select {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-accent) 28%, transparent);
 }
 
 ::-webkit-scrollbar {
-  height: var(--space-2-5);
-  width: var(--space-2-5);
+  height: var(--md-sys-space-2-5);
+  width: var(--md-sys-space-2-5);
 }
 
 ::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-primary) 4%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-accent) 32%, transparent);
-  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--md-sys-color-accent) 32%, transparent);
+  border-radius: var(--md-sys-shape-pill);
 }
 
 .line-clamp-2 {
@@ -55,22 +55,22 @@ select {
 }
 
 .react-flow__node {
-  background: var(--color-surface-raised);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
-  border-radius: var(--radius-stitch);
-  color: var(--color-primary);
-  font-size: var(--font-size-xs);
-  max-width: var(--space-editor-aside);
-  padding: var(--space-2) var(--space-2-5);
+  background: var(--md-sys-color-surface-raised);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-accent) 28%, transparent);
+  border-radius: var(--md-sys-shape-stitch);
+  color: var(--md-sys-color-primary);
+  font-size: var(--md-sys-typescale-size-xs);
+  max-width: var(--md-sys-space-editor-aside);
+  padding: var(--md-sys-space-2) var(--md-sys-space-2-5);
 }
 
 .react-flow__node-input {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--md-sys-color-accent);
+  color: var(--md-sys-color-on-accent);
 }
 
 .react-flow__edge-path {
-  stroke: var(--color-accent);
+  stroke: var(--md-sys-color-accent);
 }
 
 .react-flow__controls {
@@ -78,7 +78,7 @@ select {
 }
 
 .react-flow__controls-button {
-  background: var(--color-surface-tonal);
-  border-color: var(--color-outline);
-  color: var(--color-primary);
+  background: var(--md-sys-color-surface-tonal);
+  border-color: var(--md-sys-color-outline);
+  color: var(--md-sys-color-primary);
 }

@@ -39,6 +39,7 @@ export type Entry = {
   media: { type: string; url: string }[];
   updatedAt?: string;
   similarity?: number;
+  metadata?: ReadmePayload['metadata'] & { sourceEntryId?: string };
   aiCritic?: {
     questions: string[];
     source: string;

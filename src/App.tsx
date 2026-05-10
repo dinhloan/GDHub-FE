@@ -31,6 +31,7 @@ import { api } from './api/client';
 import { LoginScreen } from './components/LoginScreen';
 import { MainLayout } from './components/MainLayout';
 import { StitchMarkdown } from './components/StitchMarkdown';
+import { StitchSidebar } from './components/StitchSidebar';
 import { VoiceNoteButton } from './components/VoiceNoteButton';
 import { useDiaryDetail } from './hooks/useDiaryDetail';
 import { StitchDiary, useStitchDiary } from './hooks/useStitchDiary';
@@ -668,7 +669,16 @@ function DashboardView({
       </section>
 
       {diary.content ? (
-        <MainLayout sidebar={<ReadmeSidebar activeTopic={activeTopic} diary={diary} topics={topics} />}>
+        <MainLayout
+          sidebar={
+            <StitchSidebar
+              activeTopic={activeTopic}
+              entries={diary.entries}
+              metadata={diary.metadata}
+              topics={topics}
+            />
+          }
+        >
           <StitchMarkdown {...diary.markdownProps} />
         </MainLayout>
       ) : null}
@@ -1226,7 +1236,7 @@ function GraphView({ graph, entries, onBack }: { graph: { nodes: any[]; edges: a
       <section className="rounded-stitch border border-outline bg-surface-tonal p-4">
         <div className="h-80 overflow-hidden rounded-stitch border border-outline bg-surface">
           <ReactFlow nodes={graph.nodes} edges={graph.edges} fitView>
-            <Background color="rgba(231,251,247,0.16)" gap={18} />
+            <Background color="var(--md-sys-color-outline-variant)" gap={18} />
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>

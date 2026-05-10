@@ -86,9 +86,10 @@ function normalizeDiaryResponse(response?: DiaryEndpointResponse) {
   const preferredEntry = entries.find((entry) => entry.status === 'Debating') ?? entries[0];
   const rawContent = rawEnvelopeContent ?? entries.map((entry) => entry.content).filter(Boolean).join('\n\n---\n\n');
   const parsed = parseFrontmatter(rawContent);
-  const frontmatter = { ...parsed.frontmatter, ...(envelope?.metadata?.frontmatter ?? {}) };
+  const entryMetadata = preferredEntry?.metadata;
+  const frontmatter = { ...parsed.frontmatter, ...(entryMetadata?.frontmatter ?? {}), ...(envelope?.metadata?.frontmatter ?? {}) };
   const metadata = buildMetadata({
-    backendMetadata: envelope?.metadata,
+    backendMetadata: { ...entryMetadata, ...envelope?.metadata },
     frontmatter,
     preferredEntry,
     content: parsed.content,

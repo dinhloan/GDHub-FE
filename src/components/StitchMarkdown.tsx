@@ -29,6 +29,14 @@ export function StitchH1({ children }: { children: ReactNode }) {
   );
 }
 
+export function StitchH2({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-l-2 border-accent pl-3">
+      <h2 className="text-xl font-semibold leading-tight text-primary">{children}</h2>
+    </div>
+  );
+}
+
 export function StitchTodo({ checked, children }: StitchTodoProps) {
   return (
     <li className="flex gap-3 rounded-stitch border border-outline bg-surface px-3 py-3">
@@ -111,7 +119,7 @@ function StitchListItem({ checked, children }: React.LiHTMLAttributes<HTMLLIElem
 
 export const stitchMarkdownComponents: Components = {
   h1: ({ children }) => <StitchH1>{children}</StitchH1>,
-  h2: ({ children }) => <h2 className="text-xl font-semibold leading-tight text-primary">{children}</h2>,
+  h2: ({ children }) => <StitchH2>{children}</StitchH2>,
   h3: ({ children }) => <h3 className="text-base font-semibold leading-6 text-primary">{children}</h3>,
   p: ({ children }) => <StitchParagraph>{children}</StitchParagraph>,
   ul: ({ children }) => <StitchList>{children}</StitchList>,

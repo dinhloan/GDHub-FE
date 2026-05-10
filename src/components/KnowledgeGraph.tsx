@@ -32,7 +32,7 @@ export function KnowledgeGraph({ topicId, entries }: { topicId?: string; entries
       </div>
       <div className="h-72 overflow-hidden rounded-stitch border border-outline bg-surface lg:h-graph-lg">
         <ReactFlow nodes={nodes} edges={edges} fitView>
-          <Background color="rgba(231,251,247,0.16)" gap={18} />
+          <Background color="var(--md-sys-color-outline-variant)" gap={18} />
           <Controls showInteractive={false} />
         </ReactFlow>
       </div>

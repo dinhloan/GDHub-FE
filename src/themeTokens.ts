@@ -14,6 +14,7 @@ export const themeTokens = {
     disabled: 'rgba(255, 248, 220, 0.28)',
     inverse: '#1a1302',
     outline: 'rgba(255, 236, 150, 0.14)',
+    outlineVariant: 'rgba(255, 236, 150, 0.16)',
     outlineStrong: 'rgba(255, 236, 150, 0.24)',
     outlineFocus: 'rgba(255, 212, 71, 0.68)',
     accent: '#ffd447',

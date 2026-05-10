@@ -14,7 +14,7 @@ const { themeTokens } = tokenModule.exports;
 const toKebab = (key) => key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
 const toCssTokenName = (key) => toKebab(key).replace(/\./g, '-');
 const mapTokenVars = (scope, tokens) =>
-  Object.fromEntries(Object.keys(tokens).map((key) => [toKebab(key), `var(--${scope}-${toCssTokenName(key)})`]));
+  Object.fromEntries(Object.keys(tokens).map((key) => [toKebab(key), `var(--md-sys-${scope}-${toCssTokenName(key)})`]));
 
 const toOpacityPercent = (opacityValue) => {
   const numericOpacity = Number(opacityValue);
@@ -22,7 +22,7 @@ const toOpacityPercent = (opacityValue) => {
 };
 
 const tokenColor = (key) => ({ opacityValue }) => {
-  const cssVariable = `var(--color-${toCssTokenName(key)})`;
+  const cssVariable = `var(--md-sys-color-${toCssTokenName(key)})`;
   return opacityValue === undefined
     ? cssVariable
     : `color-mix(in srgb, ${cssVariable} ${toOpacityPercent(opacityValue)}, transparent)`;
@@ -32,22 +32,22 @@ const colorEntries = Object.fromEntries(Object.keys(themeTokens.colors).map((key
 const fontSizeEntries = Object.fromEntries(
   Object.entries(themeTokens.typography.fontSize).map(([key]) => [
     toKebab(key),
-    [`var(--font-size-${toCssTokenName(key)})`, { lineHeight: `var(--line-height-${toCssTokenName(key)})` }],
+    [`var(--md-sys-typescale-size-${toCssTokenName(key)})`, { lineHeight: `var(--md-sys-typescale-line-height-${toCssTokenName(key)})` }],
   ]),
 );
 
 const cssVariables = Object.fromEntries([
-  ...Object.entries(themeTokens.colors).map(([key, value]) => [`--color-${toCssTokenName(key)}`, value]),
-  ...Object.entries(themeTokens.typography.fontFamily).map(([key, value]) => [`--font-${toCssTokenName(key)}`, value.join(', ')]),
+  ...Object.entries(themeTokens.colors).map(([key, value]) => [`--md-sys-color-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.typography.fontFamily).map(([key, value]) => [`--md-sys-font-${toCssTokenName(key)}`, value.join(', ')]),
   ...Object.entries(themeTokens.typography.fontSize).flatMap(([key, value]) => [
-    [`--font-size-${toCssTokenName(key)}`, value[0]],
-    [`--line-height-${toCssTokenName(key)}`, value[1].lineHeight],
+    [`--md-sys-typescale-size-${toCssTokenName(key)}`, value[0]],
+    [`--md-sys-typescale-line-height-${toCssTokenName(key)}`, value[1].lineHeight],
   ]),
-  ...Object.entries(themeTokens.typography.fontWeight).map(([key, value]) => [`--font-weight-${toCssTokenName(key)}`, value]),
-  ...Object.entries(themeTokens.typography.letterSpacing).map(([key, value]) => [`--tracking-${toCssTokenName(key)}`, value]),
-  ...Object.entries(themeTokens.spacing).map(([key, value]) => [`--space-${toCssTokenName(key)}`, value]),
-  ...Object.entries(themeTokens.radius).map(([key, value]) => [`--radius-${toCssTokenName(key)}`, value]),
-  ...Object.entries(themeTokens.shadows).map(([key, value]) => [`--shadow-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.typography.fontWeight).map(([key, value]) => [`--md-sys-font-weight-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.typography.letterSpacing).map(([key, value]) => [`--md-sys-tracking-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.spacing).map(([key, value]) => [`--md-sys-space-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.radius).map(([key, value]) => [`--md-sys-shape-${toCssTokenName(key)}`, value]),
+  ...Object.entries(themeTokens.shadows).map(([key, value]) => [`--md-sys-elevation-${toCssTokenName(key)}`, value]),
 ]);
 
 /** @type {import('tailwindcss').Config} */
@@ -61,22 +61,22 @@ export default {
       fontWeight: mapTokenVars('font-weight', themeTokens.typography.fontWeight),
       letterSpacing: mapTokenVars('tracking', themeTokens.typography.letterSpacing),
       spacing: mapTokenVars('space', themeTokens.spacing),
-      borderRadius: mapTokenVars('radius', themeTokens.radius),
+      borderRadius: mapTokenVars('shape', themeTokens.radius),
       boxShadow: {
-        ...mapTokenVars('shadow', themeTokens.shadows),
-        'level-3': 'var(--shadow-level3)',
+        ...mapTokenVars('elevation', themeTokens.shadows),
+        'level-3': 'var(--md-sys-elevation-level3)',
       },
       maxWidth: {
-        shell: 'var(--space-shell)',
-        workspace: 'var(--space-workspace)',
+        shell: 'var(--md-sys-space-shell)',
+        workspace: 'var(--md-sys-space-workspace)',
       },
       minHeight: {
-        shell: 'var(--space-shell-tall)',
-        editor: 'var(--space-editor)',
+        shell: 'var(--md-sys-space-shell-tall)',
+        editor: 'var(--md-sys-space-editor)',
       },
       gridTemplateColumns: {
-        editor: 'minmax(0, 1fr) var(--space-editor-aside)',
-        'stitch-main': 'minmax(0, 3fr) minmax(0, 1fr)',
+        editor: 'minmax(0, 1fr) var(--md-sys-space-editor-aside)',
+        'stitch-main': 'minmax(0, 75%) minmax(0, 25%)',
       },
     },
   },
