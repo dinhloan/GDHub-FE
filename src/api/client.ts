@@ -1,4 +1,4 @@
-import { Checklist, ChecklistStatus, Entry, Group, Message, Topic, User } from '../types';
+import { Checklist, ChecklistStatus, Entry, Group, Message, ReadmePayload, Topic, User } from '../types';
 
 const defaultApiBaseUrl = () => {
   const protocol = typeof window === 'undefined' ? 'http:' : window.location.protocol;
@@ -66,6 +66,7 @@ async function upload<T>(path: string, formData: FormData, timeoutMs = REQUEST_T
 }
 
 export const api = {
+  readme: () => request<ReadmePayload>('/readme'),
   users: () => request<User[]>('/users'),
   groups: () => request<Group[]>('/groups'),
   createGroup: (payload: { name: string; leaderId: string; members: string[] }) =>
@@ -87,6 +88,7 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   entries: (topicId?: string) => request<Entry[]>(`/entries${topicId ? `?topicId=${topicId}` : ''}`),
+  entry: (id: string) => request<Entry>(`/entries/${id}`),
   searchEntries: (query: string, topicId?: string) =>
     request<Entry[]>(`/entries/search?q=${encodeURIComponent(query)}${topicId ? `&topicId=${topicId}` : ''}`),
   graph: (topicId: string) => request<{ nodes: unknown[]; edges: unknown[] }>(`/entries/graph/${topicId}`),

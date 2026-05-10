@@ -29,7 +29,11 @@ import 'reactflow/dist/style.css';
 import { io } from 'socket.io-client';
 import { api } from './api/client';
 import { LoginScreen } from './components/LoginScreen';
+import { MainLayout } from './components/MainLayout';
+import { StitchMarkdown } from './components/StitchMarkdown';
 import { VoiceNoteButton } from './components/VoiceNoteButton';
+import { useDiaryDetail } from './hooks/useDiaryDetail';
+import { StitchDiary, useStitchDiary } from './hooks/useStitchDiary';
 import { buildFallbackGraph, normalizeGraph } from './lib/graph';
 import { Checklist, ChecklistStatus, Entry, Group, Message, Topic, User } from './types';
 
@@ -187,6 +191,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
     [topicsQuery.data],
   );
   const activeTopic = topics.find((topic) => topic._id === activeTopicId) ?? topics[0];
+  const stitchDiary = useStitchDiary({ topicId: activeTopic?._id, enabled: Boolean(activeTopic?._id) });
 
   useEffect(() => {
     if (!activeTopicId && activeTopic?._id) {
@@ -217,7 +222,9 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
     enabled: Boolean(activeTopic?._id && searchQuery.trim().length >= 2),
   });
   const selectedEntry = activeEntryId === NEW_ENTRY_ID ? undefined : visibleEntries.find((entry) => entry._id === activeEntryId);
-  const activeEntry = selectedEntry ?? (activeEntryId ? undefined : visibleEntries[0]);
+  const activeEntrySummary = selectedEntry ?? (activeEntryId ? undefined : visibleEntries[0]);
+  const activeEntryDetailQuery = useDiaryDetail(activeEntrySummary?._id, { enabled: activeEntryId !== NEW_ENTRY_ID });
+  const activeEntry = activeEntryDetailQuery.data ?? activeEntrySummary;
 
   useEffect(() => {
     if (!activeEntryId && activeEntry?._id) {
@@ -439,7 +446,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
 
   return (
     <main className="min-h-screen bg-canvas text-primary md:grid md:place-items-center">
-      <section className="relative mx-auto min-h-screen w-full max-w-shell bg-app-shell pb-24 md:min-h-shell md:overflow-hidden md:rounded-stitch md:border md:border-outline md:shadow-soft">
+      <section className="relative mx-auto min-h-screen w-full max-w-shell bg-app-shell pb-24 md:min-h-shell md:max-w-workspace md:overflow-hidden md:rounded-stitch md:border md:border-outline md:shadow-soft">
         <header className="sticky top-0 z-30 border-b border-outline bg-app-shell/95 px-4 py-3 backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -475,6 +482,7 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
               groups={groups}
               users={users}
               checklists={checklists}
+              diary={stitchDiary}
               isCreatingTopic={createTopicMutation.isPending}
               onTopicSelect={goTopic}
               onCreateTopic={(payload) => createTopicMutation.mutate(payload)}
@@ -487,6 +495,9 @@ function Workspace({ currentUser, users, onLogout }: { currentUser: User; users:
             <DetailView
               activeTopic={activeTopic}
               activeEntry={activeEntry}
+              activeEntryIsLoading={activeEntryDetailQuery.isLoading}
+              activeEntryIsError={activeEntryDetailQuery.isError}
+              activeEntryError={activeEntryDetailQuery.error}
               entries={visibleEntries}
               activeEntryId={activeEntry?._id}
               messages={messages}
@@ -579,6 +590,7 @@ function DashboardView({
   groups,
   users,
   checklists,
+  diary,
   isCreatingTopic,
   onTopicSelect,
   onCreateTopic,
@@ -594,6 +606,7 @@ function DashboardView({
   groups: Group[];
   users: User[];
   checklists: Checklist[];
+  diary: StitchDiary;
   isCreatingTopic: boolean;
   onTopicSelect: (topic: Topic) => void;
   onCreateTopic: (payload: NewTopicPayload) => void;
@@ -653,6 +666,12 @@ function DashboardView({
           <p className="mt-4 rounded-stitch border border-dashed border-outline bg-surface p-4 text-sm text-primary/60">Database chưa có topic.</p>
         )}
       </section>
+
+      {diary.content ? (
+        <MainLayout sidebar={<ReadmeSidebar activeTopic={activeTopic} diary={diary} topics={topics} />}>
+          <StitchMarkdown {...diary.markdownProps} />
+        </MainLayout>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-3">
         <button className="rounded-stitch border border-outline bg-surface-tonal p-3 text-left" onClick={onSearch} type="button">
@@ -749,6 +768,9 @@ function DashboardView({
 function DetailView({
   activeTopic,
   activeEntry,
+  activeEntryIsLoading,
+  activeEntryIsError,
+  activeEntryError,
   activeEntryId,
   entries,
   messages,
@@ -768,6 +790,9 @@ function DetailView({
 }: {
   activeTopic?: Topic;
   activeEntry?: Entry;
+  activeEntryIsLoading: boolean;
+  activeEntryIsError: boolean;
+  activeEntryError: unknown;
   activeEntryId?: string;
   entries: Entry[];
   messages: Message[];
@@ -809,7 +834,11 @@ function DetailView({
             <Edit3 size={18} />
           </button>
         </div>
-        {activeEntry ? (
+        {activeEntryIsLoading ? (
+          <StitchDiaryDetailSkeleton />
+        ) : activeEntryIsError ? (
+          <StitchDiaryDetailError error={activeEntryError} />
+        ) : activeEntry ? (
           <article className="rounded-stitch border border-attention/60 bg-attention/10 p-4">
             <div className="mb-2 flex items-center gap-2">
               <FileText size={17} className="text-accent" />
@@ -916,6 +945,95 @@ function DetailView({
           </button>
         </form>
       </section>
+    </div>
+  );
+}
+
+function ReadmeSidebar({ activeTopic, diary, topics }: { activeTopic?: Topic; diary: StitchDiary; topics: Topic[] }) {
+  const timelineTopics = topics.slice(0, 3);
+  const { metadata } = diary;
+  const critic = diary.entries.find((entry) => entry.aiCritic?.questions?.length)?.aiCritic;
+
+  return (
+    <>
+      <section className="rounded-stitch border border-outline bg-surface/70 p-3">
+        <div className="mb-3 flex items-center gap-2">
+          <Bot className="text-accent" size={16} />
+          <h2 className="text-xs font-semibold uppercase tracking-section text-accent">AI Suggestions</h2>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm leading-6 text-primary/75">Template đề xuất: {metadata.template}</p>
+          <p className="text-xs leading-5 text-primary/55">Ưu tiên render theo layout {metadata.layout} và theme {metadata.theme} từ Stitch metadata.</p>
+          {metadata.sourceEntryId ? <p className="text-xs leading-5 text-primary/50">Nguồn: entry {metadata.sourceEntryId}</p> : null}
+          {critic?.questions?.length ? (
+            <div className="space-y-2 rounded-stitch border border-accent/25 bg-accent/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-eyebrow text-accent">AI Critic Agent</p>
+              {critic.questions.map((question, index) => (
+                <p className="text-xs leading-5 text-primary/70" key={`${question}-${index}`}>
+                  {index + 1}. {question}
+                </p>
+              ))}
+              <p className="text-xs text-primary/45">{critic.source}{critic.model ? ` · ${critic.model}` : ''}</p>
+            </div>
+          ) : null}
+          {activeTopic ? (
+            <p className="rounded-stitch bg-surface-tonal px-3 py-2 text-xs leading-5 text-primary/60">Gắn nội dung README với topic hiện tại: {activeTopic.title}</p>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="rounded-stitch border border-outline bg-surface/70 p-3">
+        <div className="mb-3 flex items-center gap-2">
+          <Clock className="text-accent" size={16} />
+          <h2 className="text-xs font-semibold uppercase tracking-section text-accent">Timeline</h2>
+        </div>
+        <div className="space-y-2">
+          {metadata.timeline ? (
+            <div className="rounded-stitch border border-outline bg-surface-tonal px-3 py-2">
+              <p className="text-xs font-semibold text-primary">README</p>
+              <p className="mt-1 text-xs leading-5 text-primary/55">{metadata.timeline}</p>
+            </div>
+          ) : null}
+          {timelineTopics.map((topic) => (
+            <div className="rounded-stitch border border-outline bg-surface-tonal px-3 py-2" key={topic._id}>
+              <p className="line-clamp-2 text-xs font-semibold leading-5 text-primary">{topic.title}</p>
+              <p className="mt-1 text-xs text-primary/50">{formatDate(topic.deadline)}</p>
+            </div>
+          ))}
+          {!metadata.timeline && !timelineTopics.length ? (
+            <p className="rounded-stitch border border-dashed border-outline bg-surface-tonal p-3 text-xs leading-5 text-primary/55">Chưa có timeline để hiển thị.</p>
+          ) : null}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function StitchDiaryDetailSkeleton() {
+  return (
+    <div className="rounded-stitch border border-outline bg-surface p-4 shadow-soft">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="h-5 w-5 animate-pulse rounded-stitch bg-surface-tonal" />
+        <div className="h-4 w-20 animate-pulse rounded-stitch bg-surface-tonal" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-full animate-pulse rounded-stitch bg-surface-tonal" />
+        <div className="h-4 w-11/12 animate-pulse rounded-stitch bg-surface-tonal" />
+        <div className="h-4 w-3/4 animate-pulse rounded-stitch bg-surface-tonal" />
+      </div>
+      <div className="mt-4 flex gap-2">
+        <div className="h-6 w-16 animate-pulse rounded-stitch bg-surface-tonal" />
+        <div className="h-6 w-20 animate-pulse rounded-stitch bg-surface-tonal" />
+      </div>
+    </div>
+  );
+}
+
+function StitchDiaryDetailError({ error }: { error: unknown }) {
+  return (
+    <div className="rounded-stitch border border-danger/25 bg-danger/10 p-4 shadow-soft">
+      <p className="text-xs font-semibold uppercase tracking-section text-danger">Không tải được entry</p>
+      <p className="mt-2 text-sm leading-6 text-primary/70">{error instanceof Error ? error.message : 'Vui lòng thử lại hoặc chọn entry khác.'}</p>
     </div>
   );
 }
