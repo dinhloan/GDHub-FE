@@ -1,13 +1,6 @@
 import { Checklist, ChecklistStatus, Entry, Group, Message, ReadmePayload, Topic, User } from '../types';
 
-const defaultApiBaseUrl = () => {
-  const protocol = typeof window === 'undefined' ? 'http:' : window.location.protocol;
-  const hostname = typeof window === 'undefined' ? 'localhost' : window.location.hostname;
-  if (!['localhost', '127.0.0.1'].includes(hostname)) {
-    return '/api';
-  }
-  return `${protocol}//${hostname}:4000/api`;
-};
+const defaultApiBaseUrl = () => 'http://localhost:3000/api';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || defaultApiBaseUrl();
 const REQUEST_TIMEOUT_MS = 30000;
